@@ -467,6 +467,14 @@ public class CFU {
 	    return(res);
 	}
 
+	public CFU[] splitWatershed( ) {
+		return null;
+	}
+	
+	public CFU[] splitIntoHalves( ) {
+		return null;
+	}
+
 	public CFU split(int pt1,int pt2) {
 		saved = false;
 		Polygon p = roi.getPolygon();
