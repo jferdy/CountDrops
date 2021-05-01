@@ -666,11 +666,10 @@ public class ImageWell {
 		if(cfu==null) return false;
 		if(!cfu.isSaved()) return false;
 		
-		CFU newCfu = cfu.split();
-		if(newCfu==null) return false;
-		
-		well.addCFU(newCfu);
-		selectedCFU.add(well.getNbCFU()-1);	 //the newly created CFU is added to selection (so that call to SUPPR deletes newly created CFUs)   			    		  
+		int nb = well.splitCFU(cfu);				
+						
+		this.deselectAllCFU();
+		for(int i=0;i<nb;i++) selectedCFU.add(well.getNbCFU()-1-i);	 //the newly created CFUs are selected   			    		  
 		drawSelectedCFU();	    		
 		if(!isMute) {
 			//sends event to listeners

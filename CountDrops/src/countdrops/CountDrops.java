@@ -5,6 +5,8 @@ import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dialog;
 import java.awt.Dimension;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -1186,4 +1188,5 @@ public class CountDrops implements ActionListener, ViewWellListener {
 	public void autoDetectPlate(ViewWellEvent evt) {
 		experimentTree.updateUI();
 	}	
+	
 }

@@ -2,6 +2,7 @@ package countdrops;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,12 +27,16 @@ import ij.gui.Roi;
 import ij.gui.ShapeRoi;
 import ij.gui.TextRoi;
 import ij.measure.Measurements;
+import ij.plugin.ContrastEnhancer;
 import ij.plugin.filter.BackgroundSubtracter;
+import ij.plugin.filter.EDM;
+import ij.plugin.filter.GaussianBlur;
 import ij.plugin.filter.ParticleAnalyzer;
 import ij.plugin.frame.RoiManager;
+import ij.process.AutoThresholder;
+import ij.process.ByteProcessor;
 import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
-import ij.process.ImageStatistics;
 
 public class Well {
 	private String  name;
@@ -682,7 +687,7 @@ public class Well {
 		CFU cfu = cfuList.get(index);
 		if(!cfu.isSaved()) return false; //cfu cannot be edited if saving is still in process
 		
-		System.out.println("delete "+name+" "+cfu.getCFUName());
+		//System.out.println("delete "+name+" "+cfu.getCFUName());
 		cfu.deleteRoiFile();
 		cfuList.remove(index);
 		if(getNbCFU()<=0) {
@@ -722,7 +727,7 @@ public class Well {
 		for(int index=getNbCFU()-1;index>=0;index--) {			
 				CFU cfu = cfuList.get(index);
 				if(cfu.isSaved()) {
-					System.out.println("delete "+name+" "+cfu.getCFUName());
+					//System.out.println("delete "+name+" "+cfu.getCFUName());
 					cfu.deleteRoiFile();
 					cfuList.remove(index);
 				}
@@ -843,20 +848,30 @@ public class Well {
 			cfuList.get(i).write();
 		}
 	}
-	public boolean splitCFU(int index) {
-		if(index<0 || index>=cfuList.size()) return(false);
+	
+	public int splitCFU(CFU cfu) {
+		int index = 0;
+		while(index < getNbCFU() & !getCFU(index).equals(cfu)) index++;
+		return(splitCFU(index));		
+	}
+	
+	public int splitCFU(int index) {
+		if(index<0 || index>=cfuList.size()) return(0);
 
 		CFU cfu1 = cfuList.get(index);
-		if(cfu1==null || !cfu1.isSaved()) return false;
+		if(cfu1==null || !cfu1.isSaved()) return(0);
 					
-		CFU cfu2 = cfu1.split();
-		if(cfu2!=null) {
-			addCFU(cfu2);
-			cfu1.write();
-			cfu2.write();
-			return(true);
+		CFU[] newcfu = cfu1.split();
+		if(newcfu!=null) {
+			for(int i=0;i<newcfu.length;i++) {
+				addCFU(newcfu[i]);
+				newcfu[i].write();
+			}
+			this.deleteCFU(index);
+			return(newcfu.length);
 		}
-		return(false);
+		
+		return(0);
 	}
 	
 	public int getNbRoiFiles() {
@@ -1015,76 +1030,52 @@ public class Well {
 		
 		return(impCpy);		
 	}
-	
-	public int splitToMax(ImagePlus impCpy,boolean light,int minSize,double minCirc,boolean bubble) {
-		return splitToMax(impCpy,0,light,minSize,minCirc,bubble);
-	}
-	
-	public int splitToMax(ImagePlus impCpy,int firstCFU,boolean light,int minSize,double minCirc,boolean bubble) {
-		//The first CFU (zero in most cases, but not if autodetect has been run while CFU were already there)
-        //is the first CFU that has been added by autodetect and that should be tested for splitting.
+		
+	public int detectCFU(ImagePlus imp,int slice,double gBlurSigma,double enhanceContrast,boolean lightBackground,int minSize,double minCirc,String defaultCFUtype) {
+		ImagePlus impCpy = new ImagePlus("",imp.getStack().getProcessor(slice));		
+		
+		//convert to graylevel
+		ImageConverter impConv = new ImageConverter(impCpy);
+		impConv.convertToGray32();		
+		
+		//enhance contrast
+		if(enhanceContrast>0) {
+			ContrastEnhancer enh = new ContrastEnhancer();
+			enh.stretchHistogram(impCpy, enhanceContrast);			                                            
+		}
+		
+		//add gaussian blur
+		if(gBlurSigma>0) {
+			GaussianBlur gb = new GaussianBlur();
+			gb.blurGaussian(impCpy.getProcessor(), gBlurSigma);
+		}
 		
 		
-		int lastCFU = getNbCFU();		
-		if(lastCFU<firstCFU) return 0;
+		// set threshold using default autothreshold
+		// the CFU should eventually turned to white on a black background
+		// one problem with this method arises when well is empty: the threshold is then very low
+		// (or very high depending on the background) and false positives are generated 
+		// autoThreshold is considered meaningful when above 10 and below 245
+	    impCpy.getProcessor().setAutoThreshold(AutoThresholder.Method.Default,!lightBackground);	    
+	    if(impCpy.getProcessor().getAutoThreshold()<=10 || impCpy.getProcessor().getAutoThreshold()>=245) return(0);	
+	    
+	    impCpy.getProcessor().autoThreshold();
+	    ByteProcessor mask = impCpy.getProcessor().createMask();
+	    
+		//watershed
+		EDM edm = new EDM();
+		edm.toWatershed(mask);
+
+		impCpy.setProcessor(mask);
+		impCpy.getProcessor().setThreshold(125,255,ImageProcessor.NO_LUT_UPDATE);
 		
-		int nbAdded = 0;		
-		for(int i=lastCFU-1;i>=firstCFU;i--) {
-			CFU x = getCFU(i); 
-			//x.setSaved(false);
-			//x.write();
 			
-			ArrayList<CFU> newCFU = x.splitToMax(impCpy.getProcessor(),light,bubble); //split CFU if contains several peaks of intensity
-			if(newCFU!=null && newCFU.size()>1) {                                                        //if no peak or only one peak is found, returns null 
-				deleteCFU(i); // CFU to split must first be deleted, otherwise it overlaps with new CFUs and prevents them to be added! 
-				for(int j=0;j<newCFU.size();j++) {
-					//adds new CFU at the end of the array
-					if(addCFU(newCFU.get(j),0.9,0,minCirc)) nbAdded++;  
-				}			
-			} else {
-				//the original CFU has not been split
-				nbAdded++;
-			}
-		}
-		return nbAdded;
-	}
-	
-	
-	
-	public int detectCFU(ImagePlus impCpy,double sensitivityInf,double sensitivitySup,boolean light,boolean doSplit,int minSize,double minCirc) {		
-		//impCpy must be created by a call to convertImageToGrayLevels
-		ImageProcessor ipCpy = impCpy.getProcessor();
-		
-		//applies threshold
-		ImagePlus impThr = impCpy.duplicate();
-		ImageStatistics stats = impThr.getStatistics();
-		long[] h = stats.getHistogram();
-		long total = 0;
-		for(int i=0;i<h.length;i++) {
-			total += h[i];
-			h[i]=total;
-		}
-		if(!light) {
-			double tmpSensitivityInf = 1.0 - sensitivitySup;
-			sensitivitySup = 1.0 - sensitivityInf;
-			sensitivityInf = tmpSensitivityInf;
-		}
-		int thresholdInf = -1; //change if light is true??
-		int thresholdSup = -1;
-		for(int i=0;i<h.length;i++) {	    
-			double z = h[i] / (double) total;
-			if(z<=sensitivityInf) thresholdInf = i;
-			if(z<=sensitivitySup)  thresholdSup = i;
-		}
-
-		ImageProcessor ipThr = impThr.getProcessor();
-		ipThr.setThreshold(thresholdInf,thresholdSup,ImageProcessor.NO_LUT_UPDATE);
-
+		//particle analysis
 		ParticleAnalyzer pa = new ParticleAnalyzer(ParticleAnalyzer.SHOW_NONE+ParticleAnalyzer.ADD_TO_MANAGER+ParticleAnalyzer.INCLUDE_HOLES+ParticleAnalyzer.EXCLUDE_EDGE_PARTICLES,//
 				Measurements.AREA,
 				null, //new ResultsTable(),
 				minSize,
-				impThr.getWidth()*impThr.getHeight()/2.0, //max size
+				imp.getWidth()*imp.getHeight()/2.0, //max size
 				minCirc,
 				2.0);
 		// Constructs a ParticleAnalyzer.
@@ -1100,45 +1091,29 @@ public class Well {
 
 		RoiManager roima = new RoiManager(true);
 		pa.setRoiManager(roima);
-
-		boolean success = pa.analyze(impThr,ipThr);
-		if(!success) return 0;
+		
+		boolean success = pa.analyze(impCpy,impCpy.getProcessor());
+		if(!success) return(0);
+		
 		
 		Roi[] vroi = roima.getRoisAsArray();
 		roima.reset();
-		roima.close();
-
-		if(doSplit && light) {
-			ipCpy.invert();
-		}
-
-		int nbDetectCFU = 0;	
+		roima.close();			
+		
+		if(vroi==null || vroi.length<=0) return(0); //nothing has been detected
+		
+		CFU[] newcfu = new CFU[vroi.length];
 		for(int i=0;i<vroi.length;i++) {
-			
 			//create new CFU
-			CFU x = new CFU(this,new ShapeRoi(vroi[i].getPolygon()));	    
-			
-			//splits CFU according to max intensity
-			if(doSplit) {
-				ArrayList<CFU> newCFU = x.splitToMax(ipCpy,light,true); //split CFU if contains several peaks of intensity
-				if(newCFU!=null) {	 													//uses bubble !
-					for(int j=0;j<newCFU.size();j++) {
-						if(addCFU(newCFU.get(j),0.9,minSize,0)) nbDetectCFU++;
-					}
-				} else {
-					if(addCFU(x,0.5,minSize,minCirc)) nbDetectCFU++;
-				}
-			} else {
-				if(addCFU(x,0.5,minSize,minCirc)) nbDetectCFU++; 
-			}
-		}
-		
-		impThr.flush();
-		
-		saved = false;
-		return(nbDetectCFU);
+			Polygon p = vroi[i].getPolygon();			
+			CFU cfu = new CFU(this,new ShapeRoi(p));
+			cfu.setCFUType(defaultCFUtype);
+			addCFU(cfu);
+		}		
+
+		return(vroi.length);		
 	}
-	
+		
 	public void exportCounts(PrintWriter writer) {
 		//printer headers 
 		for(int i=0;i<getSettings().getNFIELDS();i++) {			

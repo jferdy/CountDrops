@@ -18,8 +18,13 @@ import ij.gui.ImageCanvas;
 import ij.gui.OvalRoi;
 import ij.gui.Overlay;
 import ij.gui.PolygonRoi;
+import ij.gui.Roi;
 import ij.gui.ShapeRoi;
+import ij.measure.Measurements;
+import ij.plugin.filter.EDM;
 import ij.plugin.filter.MaximumFinder;
+import ij.plugin.filter.ParticleAnalyzer;
+import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
 import ij.process.ImageStatistics;
 
@@ -468,13 +473,94 @@ public class CFU {
 	}
 
 	public CFU[] splitWatershed( ) {
-		return null;
+		//bounding box
+		Rectangle bb = this.getRoi().getBounds();
+		
+		//create mask (background is black, object is white)
+		ImageProcessor ip = this.getRoi().getMask();
+		
+		//watershed segmentation
+		EDM edm = new EDM();
+		edm.toWatershed(ip);
+		
+		//set threshold to select white areas
+		ip.setThreshold(125,255,ImageProcessor.NO_LUT_UPDATE);
+		
+		//particle analysis
+		ParticleAnalyzer pa = new ParticleAnalyzer(ParticleAnalyzer.SHOW_NONE+ParticleAnalyzer.ADD_TO_MANAGER+ParticleAnalyzer.INCLUDE_HOLES,//
+				Measurements.AREA,
+				null, //new ResultsTable(),
+				1.0,
+				ip.getWidth()*ip.getHeight(), //max size
+				0.0,
+				2.0);
+		// Constructs a ParticleAnalyzer.
+		// 	    Parameters:
+		// 	    options - a flag word created by Oring SHOW_RESULTS, EXCLUDE_EDGE_PARTICLES, etc.
+		// 	    measurements - a flag word created by ORing constants defined in the Measurements interface
+		// 	    rt - a ResultsTable where the measurements will be stored
+		// 	    minSize - the smallest particle size in pixels
+		// 	    maxSize - the largest particle size in pixels
+		// 	    minCirc - minimum circularity
+		// 	    maxCirc - maximum circularity
+
+
+		RoiManager roima = new RoiManager(true);
+		pa.setRoiManager(roima);
+		
+		boolean success = pa.analyze(new ImagePlus("mask",ip),ip);
+		if(!success) return null;
+		
+		Roi[] vroi = roima.getRoisAsArray();
+		roima.reset();
+		roima.close();
+
+		if(vroi.length<=1) return(null); //if only one ROI has been detected, the CFU has not been split!
+		
+		CFU[] newcfu = new CFU[vroi.length];
+		for(int i=0;i<vroi.length;i++) {
+			//create new CFU
+			Polygon p = vroi[i].getPolygon();
+			p.translate(bb.x,bb.y);
+			newcfu[i] = new CFU(this,new ShapeRoi(p));	    
+		}		
+		return newcfu;
 	}
 	
-	public CFU[] splitIntoHalves( ) {
-		return null;
+	public CFU[] splitInTwoHalves( ) {
+		Rectangle bb = roi.getBounds();
+		int h = bb.height;
+		int w = bb.width;
+		int dx,dy;
+		if(h>w) {
+			h/=2;
+			dx = 0;
+			dy = h;
+		} else {
+			w/=2;
+			dx = w;
+			dy = 0;
+		}
+		ShapeRoi r1 = new ShapeRoi(new Roi(bb.x,bb.y,w,h));
+		ShapeRoi r2 = new ShapeRoi(new Roi(bb.x+dx,bb.y+dy,w,h));
+		
+		CFU[] newcfu = new CFU[2];
+		r1 = r1.and(roi);
+		r2 = r2.and(roi);
+		
+		newcfu[0] = new CFU(this,r1);
+		newcfu[1] = new CFU(this,r2);
+		
+		return newcfu;
 	}
 
+	public CFU[] split() {
+		CFU[] newcfu = this.splitWatershed();
+		if(newcfu == null) newcfu = this.splitInTwoHalves(); //watershed hasn't split anything: cut the CFU in two halves
+		return(newcfu);
+	}
+	
+	/*
 	public CFU split(int pt1,int pt2) {
 		saved = false;
 		Polygon p = roi.getPolygon();
@@ -533,21 +619,21 @@ public class CFU {
 			j++;
 		}
 		
-		/*
+		
 		//smoothing of the two split CFUs
-		double[] xma = movingAverage(x1,MovingAverageWidth);
-		double[] yma = movingAverage(y1,MovingAverageWidth);
-		for(int i=0;i<nb1+nbsup;i++) {
-			x1[i]=(int) xma[i];
-			y1[i]=(int) yma[i];
-		}
-		xma = movingAverage(x2,MovingAverageWidth);
-		yma = movingAverage(y2,MovingAverageWidth);
-		for(int i=0;i<nb2+nbsup;i++) {
-			x2[i]=(int) xma[i];
-			y2[i]=(int) yma[i];
-		}
-		*/
+//		double[] xma = movingAverage(x1,MovingAverageWidth);
+//		double[] yma = movingAverage(y1,MovingAverageWidth);
+//		for(int i=0;i<nb1+nbsup;i++) {
+//			x1[i]=(int) xma[i];
+//			y1[i]=(int) yma[i];
+//		}
+//		xma = movingAverage(x2,MovingAverageWidth);
+//		yma = movingAverage(y2,MovingAverageWidth);
+//		for(int i=0;i<nb2+nbsup;i++) {
+//			x2[i]=(int) xma[i];
+//			y2[i]=(int) yma[i];
+//		}
+		
 		ShapeRoi p1 = new ShapeRoi(new Polygon(x1,y1,nb1+nbsup));
 		ShapeRoi p2 = new ShapeRoi(new Polygon(x2,y2,nb2+nbsup));
 
@@ -564,7 +650,9 @@ public class CFU {
 		saved = true;		
 		return(cfu1);
 	}
+	*/
 	
+	/*
 	public CFU split() {
 		//System.out.println("split "+CFUName+"...");    
 		Polygon p = roi.getPolygon();
@@ -696,123 +784,81 @@ public class CFU {
 			} else {
 				cfu1.write();			
 		}*/
-		if(cfu1.getArea()<20) return null;
-		return cfu1;
-	}
+		//if(cfu1.getArea()<20) return null;
+		//return cfu1;
+	//}
 	
 
 
-	public ArrayList<CFU> splitToMax(ImageProcessor ip,boolean light,boolean bubble) {
-		saved = true; //split to Max creates new CFU but does not change the original one
-		
-		//maxima à l'intérieur du contour
-		// String opt = "noise=2 output=[Point Selection] exclude";
-		// if(light) opt = opt+" light";
-		// IJ.run("Find Maxima...", opt);
-		// Polygon ptMax = imp.getRoi().getPolygon(); //position of the maxima
-
-		
-		
-		//résultats parfois bizarre: coordonnées parfois à l'extérieur du ROI!
-		MaximumFinder mf = new MaximumFinder(); 
-		ip.setRoi(this.getRoi()); //???
-		Polygon ptMax = mf.getMaxima(ip,2.0,true); //noise = 2.0 ?
-		
-		//ip.setRoi(ptMax);
-		//System.out.println(this.CFUName+": "+ptMax.npoints);
-		
-		ArrayList<CFU> cfu = new ArrayList<CFU>();
-
-		//if one maximum, nothing to split	
-		if(ptMax.npoints<=1) {			
-			cfu.add(this);
-			return(cfu);
-		}
-
-		Polygon contourCFU = roi.getPolygon();     //original contour of the CFU
-
-		if(bubble) {			
-			//split using blubble
-			int inside = 0;
-			for(int i=0;i<ptMax.npoints;i++) {
-				int x = ptMax.xpoints[i];
-				int y = ptMax.ypoints[i];
-				if(roi.contains(x,y)) { //the maxima seem to fall sometime outside contour...
-					double d = Math.sqrt(Math.pow(contourCFU.xpoints[0]-x,2.0)+Math.pow(contourCFU.ypoints[0]-y,2.0));
-					for(int j=1;j<contourCFU.npoints;j++) {
-						double dbis = Math.sqrt(Math.pow(contourCFU.xpoints[j]-x,2.0)+Math.pow(contourCFU.ypoints[j]-y,2.0));
-						if(dbis<d) d = dbis;
-					}
-					if(d>1) {//new CFU must be more than two pixel wide!
-						//d=3;
-						OvalRoi ov = new OvalRoi(x-d,y-d,2*d,2*d);	    
-						ShapeRoi p = new ShapeRoi(ov.getPolygon());
-						CFU cfu2 = new CFU(this,p);
-						cfu.add(cfu2);						 
-						inside++;
-					}
-				}
-			}
-			System.out.println(this.getCFUName()+"->"+ptMax.npoints+"/"+inside);
-		} else { //split without bubble			
-			ArrayList<ArrayList<Double[]>> points = new ArrayList<ArrayList<Double[]>>();
-			for(int j=0;j<ptMax.npoints;j++) {						
-				points.add(new ArrayList<Double[]>());
-			}
-			for(int i=0;i<contourCFU.npoints;i++) { //walks along original contour
-				//the point to attribute
-				int x = contourCFU.xpoints[i];
-				int y = contourCFU.ypoints[i];
-				
-				//distance to the first maximum
-				double d      = Math.sqrt(Math.pow(x-ptMax.xpoints[0],2.0)+Math.pow(y-ptMax.ypoints[0],2.0));
-				int    center = 0;
-				for(int j=1;j<ptMax.npoints;j++) {  
-					//distance to other maxima
-					double d2 = Math.sqrt(Math.pow(x-ptMax.xpoints[j],2.0)+Math.pow(y-ptMax.ypoints[j],2.0));
-					if(d2<d) {
-						d = d2;
-						center = j;
-					}
-				}
-				//computes angle (used to put points in the right order)
-				double theta = Math.acos((x-ptMax.xpoints[center])/d);
-				if(y<ptMax.ypoints[center]) theta *= -1;
-				
-				//the point is added to the contour that corresponds to the closest maximum
-				Double[] pt = new Double[3];
-				pt[0] = (double) x; pt[1] = (double) y; pt[2] = theta;
-				points.get(center).add(pt);
-			}
-			
-			for(int j=0;j<ptMax.npoints;j++) {
-				if(points.get(j).size()>0) {
-					//sort points according to theta
-					Collections.sort(points.get(j), new Comparator<Double[]>() {
-				        @Override
-				        public int compare(Double[] pt2, Double[] pt1)
-				        {
-				        	if(pt1[2]<pt2[2]) return 1;
-				            return 2;
-				        }
-				    });
-					//extract x and y from array
-					int nb = points.get(j).size();
-					int[] x = new int[nb];
-					int[] y = new int[nb];
-					for(int i=0;i<nb;i++) {
-						x[i] = (int) ((double) points.get(j).get(i)[0]);
-						y[i] = (int) ((double) points.get(j).get(i)[1]);
-					}
-					
-					cfu.add(new CFU(this,new ShapeRoi(new Polygon(x,y,nb))));
-				}
-			}
-		} //end split without bubble
-		
-		if(cfu.size()<=0) {
-			return null;
-		}
-		return(cfu);
+	/*
+	 * public ArrayList<CFU> splitToMax(ImageProcessor ip,boolean light,boolean
+	 * bubble) { saved = true; //split to Max creates new CFU but does not change
+	 * the original one
+	 * 
+	 * //maxima à l'intérieur du contour // String opt =
+	 * "noise=2 output=[Point Selection] exclude"; // if(light) opt = opt+" light";
+	 * // IJ.run("Find Maxima...", opt); // Polygon ptMax =
+	 * imp.getRoi().getPolygon(); //position of the maxima
+	 * 
+	 * 
+	 * 
+	 * //résultats parfois bizarre: coordonnées parfois à l'extérieur du ROI!
+	 * MaximumFinder mf = new MaximumFinder(); ip.setRoi(this.getRoi()); //???
+	 * Polygon ptMax = mf.getMaxima(ip,2.0,true); //noise = 2.0 ?
+	 * 
+	 * //ip.setRoi(ptMax); //System.out.println(this.CFUName+": "+ptMax.npoints);
+	 * 
+	 * ArrayList<CFU> cfu = new ArrayList<CFU>();
+	 * 
+	 * //if one maximum, nothing to split if(ptMax.npoints<=1) { cfu.add(this);
+	 * return(cfu); }
+	 * 
+	 * Polygon contourCFU = roi.getPolygon(); //original contour of the CFU
+	 * 
+	 * if(bubble) { //split using blubble int inside = 0; for(int
+	 * i=0;i<ptMax.npoints;i++) { int x = ptMax.xpoints[i]; int y =
+	 * ptMax.ypoints[i]; if(roi.contains(x,y)) { //the maxima seem to fall sometime
+	 * outside contour... double d =
+	 * Math.sqrt(Math.pow(contourCFU.xpoints[0]-x,2.0)+Math.pow(contourCFU.ypoints[0
+	 * ]-y,2.0)); for(int j=1;j<contourCFU.npoints;j++) { double dbis =
+	 * Math.sqrt(Math.pow(contourCFU.xpoints[j]-x,2.0)+Math.pow(contourCFU.ypoints[j
+	 * ]-y,2.0)); if(dbis<d) d = dbis; } if(d>1) {//new CFU must be more than two
+	 * pixel wide! //d=3; OvalRoi ov = new OvalRoi(x-d,y-d,2*d,2*d); ShapeRoi p =
+	 * new ShapeRoi(ov.getPolygon()); CFU cfu2 = new CFU(this,p); cfu.add(cfu2);
+	 * inside++; } } }
+	 * System.out.println(this.getCFUName()+"->"+ptMax.npoints+"/"+inside); } else {
+	 * //split without bubble ArrayList<ArrayList<Double[]>> points = new
+	 * ArrayList<ArrayList<Double[]>>(); for(int j=0;j<ptMax.npoints;j++) {
+	 * points.add(new ArrayList<Double[]>()); } for(int
+	 * i=0;i<contourCFU.npoints;i++) { //walks along original contour //the point to
+	 * attribute int x = contourCFU.xpoints[i]; int y = contourCFU.ypoints[i];
+	 * 
+	 * //distance to the first maximum double d =
+	 * Math.sqrt(Math.pow(x-ptMax.xpoints[0],2.0)+Math.pow(y-ptMax.ypoints[0],2.0));
+	 * int center = 0; for(int j=1;j<ptMax.npoints;j++) { //distance to other maxima
+	 * double d2 =
+	 * Math.sqrt(Math.pow(x-ptMax.xpoints[j],2.0)+Math.pow(y-ptMax.ypoints[j],2.0));
+	 * if(d2<d) { d = d2; center = j; } } //computes angle (used to put points in
+	 * the right order) double theta = Math.acos((x-ptMax.xpoints[center])/d);
+	 * if(y<ptMax.ypoints[center]) theta *= -1;
+	 * 
+	 * //the point is added to the contour that corresponds to the closest maximum
+	 * Double[] pt = new Double[3]; pt[0] = (double) x; pt[1] = (double) y; pt[2] =
+	 * theta; points.get(center).add(pt); }
+	 * 
+	 * for(int j=0;j<ptMax.npoints;j++) { if(points.get(j).size()>0) { //sort points
+	 * according to theta Collections.sort(points.get(j), new Comparator<Double[]>()
+	 * {
+	 * 
+	 * @Override public int compare(Double[] pt2, Double[] pt1) { if(pt1[2]<pt2[2])
+	 * return 1; return 2; } }); //extract x and y from array int nb =
+	 * points.get(j).size(); int[] x = new int[nb]; int[] y = new int[nb]; for(int
+	 * i=0;i<nb;i++) { x[i] = (int) ((double) points.get(j).get(i)[0]); y[i] = (int)
+	 * ((double) points.get(j).get(i)[1]); }
+	 * 
+	 * cfu.add(new CFU(this,new ShapeRoi(new Polygon(x,y,nb)))); } } } //end split
+	 * without bubble
+	 * 
+	 * if(cfu.size()<=0) { return null; } return(cfu); }
+	 */
 	}
-}

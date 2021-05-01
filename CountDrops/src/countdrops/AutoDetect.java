@@ -20,6 +20,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
@@ -37,27 +38,24 @@ public class AutoDetect extends JDialog implements ActionListener {
 	ViewWellEvent viewWellEvent;
 	ArrayList<ViewWellListener> listener;
 	
-	JCheckBox chkDelete,chkLightBackground,chkAutoSplit;	
-	JFormattedTextField fieldSensitivitySupNbValues;
-	JSlider sliderMinCirc,sliderMinSize,sliderSensitivityInf,sliderSensitivitySupFrom,sliderSensitivitySupTo;
+	JCheckBox chkLightBackground,chkAutoSplit;	
+	JFormattedTextField fieldContrastEnhance,fieldGBlurSigma,fieldMinSize,fieldMinCirc;
+	JComboBox<String> comboBoxCFUtype;
 	
 	//default parameters for CFU detection
-	private int      slice = -1;
-	private boolean  autoSplit = false;
+	private int      slice = -1;	
 	private boolean  lightBackground = true;
 	private int      minSize = 20;
 	private double   minCirc = 0.2;
-	private double   sensitivityInf = 0.05;
-	private double   sensitivitySupFrom = 0.1;
-	private double   sensitivitySupTo = 0.5;
-	private int      sensitivitySupNbValues = 10;
+	private double   enhanceContrast = 0.3;
+	private double   gBlurSigma = 1.0;
+	private String   defaultCFUtype = "NA";
 
 	public AutoDetect(ImageWell i,ViewWellEvent e,ArrayList<ViewWellListener> l) {
 		super();
 		setModal(true);
 		
-		
-		
+				
 		img = i;
 		slice = img.getImagePlus().getSlice();
 		viewWellEvent = e;
@@ -83,93 +81,51 @@ public class AutoDetect extends JDialog implements ActionListener {
 		
 
 		Hashtable<Integer,JLabel> labelTable;
-		
-		sliderMinSize = new JSlider(JSlider.HORIZONTAL,0,100,minSize/5);
-		sliderMinSize.setMajorTickSpacing(10);
-		sliderMinSize.setMinorTickSpacing(5);
-		sliderMinSize.setPaintTicks(true);
-		labelTable = new Hashtable<Integer,JLabel>();
-		for(int j=0;j<=100;j+=20) {
-		    labelTable.put(Integer.valueOf(j), new JLabel(String.valueOf(j*5)) );
-		}
-		sliderMinSize.setLabelTable(labelTable);
-		sliderMinSize.setPaintLabels(true);
-		gbcL.gridx=0; gbcL.gridy=0; left_p.add(new JLabel("Minimum size"),gbcL);
-		gbcL.gridx=0; gbcL.gridy=1; left_p.add(sliderMinSize,gbcL);
-		
-		
-		sliderMinCirc = new JSlider(JSlider.HORIZONTAL,0,100,(int)(minCirc*100));
-		sliderMinCirc.setMajorTickSpacing(10);
-		sliderMinCirc.setMinorTickSpacing(5);
-		sliderMinCirc.setPaintTicks(true);
-		labelTable = new Hashtable<Integer,JLabel>();
-		for(int j=0;j<=100;j+=20) {
-		    labelTable.put(Integer.valueOf(j), new JLabel(String.valueOf(((double) j)/100.0)) );
-		}
-		sliderMinCirc.setLabelTable(labelTable);
-		sliderMinCirc.setPaintLabels(true);
-		gbcL.gridx=1; gbcL.gridy=0; left_p.add(new JLabel("Minimum circularity"),gbcL);
-		gbcL.gridx=1; gbcL.gridy=1; left_p.add(sliderMinCirc,gbcL);
-				
 
-		chkLightBackground = new JCheckBox("Light background");
-		chkLightBackground.setSelected(lightBackground);
-		gbcL.gridx=1; gbcL.gridy=2; left_p.add(chkLightBackground,gbcL);
-
-		chkAutoSplit = new JCheckBox("Guess CFUs to be split");
-		chkAutoSplit .setSelected(autoSplit);
-		gbcL.gridx=0; gbcL.gridy=2; left_p.add(chkAutoSplit ,gbcL);
-		
 		NumberFormat formatInteger = NumberFormat.getInstance();
 		formatInteger.setMaximumFractionDigits(0);
 		formatInteger.setParseIntegerOnly(true);
 
-		fieldSensitivitySupNbValues = new JFormattedTextField(formatInteger);
-		fieldSensitivitySupNbValues.setColumns(20);
-		fieldSensitivitySupNbValues.setValue(sensitivitySupNbValues);
-		gbcL.gridx=1; gbcL.gridy=3; left_p.add(new JLabel("Number of values of maximum sensitivity"),gbcL);
-		gbcL.gridx=1; gbcL.gridy=4; left_p.add(fieldSensitivitySupNbValues,gbcL);
+		NumberFormat formatDouble = NumberFormat.getInstance();
+		formatDouble.setMaximumFractionDigits(3);
+		formatDouble.setParseIntegerOnly(false);	
 		
-		sliderSensitivityInf = new JSlider(JSlider.HORIZONTAL,0,50,(int) (sensitivityInf*100));
-		sliderSensitivityInf.setMajorTickSpacing(10);
-		sliderSensitivityInf.setMinorTickSpacing(5);
-		sliderSensitivityInf.setPaintTicks(true);
-		labelTable = new Hashtable<Integer,JLabel>();
-		for(int j=0;j<=100;j+=20) {
-		    labelTable.put(Integer.valueOf(j), new JLabel(String.valueOf(((double) j)/100.0)) );
-		}
-		sliderSensitivityInf.setLabelTable(labelTable);
-		sliderSensitivityInf.setPaintLabels(true);
-		gbcL.gridx=0; gbcL.gridy=3; left_p.add(new JLabel("Minimum sensitivity"),gbcL);
-		gbcL.gridx=0; gbcL.gridy=4; left_p.add(sliderSensitivityInf,gbcL);
+		String[] cfuTypes = new String[i.getPlate().getCFUType().size()+1];
+		cfuTypes[0] = "NA";
+		for(int j=0;j<i.getPlate().getCFUType().size();j++) cfuTypes[j+1] = i.getPlate().getCFUType(j);		
+		comboBoxCFUtype = new JComboBox<String>(cfuTypes);					  
+		comboBoxCFUtype.setLightWeightPopupEnabled (false); //This line must be added otherwise combobox don't work properly.
+													 //The issue comes from swing and awt libraries being mixed in the project.
+		comboBoxCFUtype.setSelectedItem(defaultCFUtype);
+		gbcL.gridx=1; gbcL.gridy=0; left_p.add(comboBoxCFUtype,gbcL);
 		
-		
-		sliderSensitivitySupFrom = new JSlider(JSlider.HORIZONTAL,0,100,(int) (sensitivitySupFrom*100));
-		sliderSensitivitySupFrom.setMajorTickSpacing(10);
-		sliderSensitivitySupFrom.setMinorTickSpacing(5);
-		sliderSensitivitySupFrom.setPaintTicks(true);
-		labelTable = new Hashtable<Integer,JLabel>();
-		for(int j=0;j<=100;j+=20) {
-		    labelTable.put(Integer.valueOf(j), new JLabel(String.valueOf(((double) j)/100.0)) );
-		}
-		sliderSensitivitySupFrom.setLabelTable(labelTable);
-		sliderSensitivitySupFrom.setPaintLabels(true);
-		gbcL.gridx=0; gbcL.gridy=5; left_p.add(new JLabel("Max sensitivity ranges from"),gbcL);
-		gbcL.gridx=0; gbcL.gridy=6; left_p.add(sliderSensitivitySupFrom,gbcL);
+		chkLightBackground = new JCheckBox("Light background");
+		chkLightBackground.setSelected(lightBackground);
+		gbcL.gridx=1; gbcL.gridy++; left_p.add(chkLightBackground,gbcL);
 
-		sliderSensitivitySupTo = new JSlider(JSlider.HORIZONTAL,0,100,(int) (sensitivitySupTo*100));
-		sliderSensitivitySupTo.setMajorTickSpacing(10);
-		sliderSensitivitySupTo.setMinorTickSpacing(5);
-		sliderSensitivitySupTo.setPaintTicks(true);
-		labelTable = new Hashtable<Integer,JLabel>();
-		for(int j=0;j<=100;j+=20) {
-		    labelTable.put(Integer.valueOf(j), new JLabel(String.valueOf(((double) j)/100.0)) );
-		}
-		sliderSensitivitySupTo.setLabelTable(labelTable);
-		sliderSensitivitySupTo.setPaintLabels(true);
-		gbcL.gridx=1; gbcL.gridy=5; left_p.add(new JLabel("Max sensitivity ranges ranges to"),gbcL);
-		gbcL.gridx=1; gbcL.gridy=6; left_p.add(sliderSensitivitySupTo,gbcL);
+		fieldContrastEnhance = new JFormattedTextField(formatDouble);
+		fieldContrastEnhance.setColumns(20);
+		fieldContrastEnhance.setValue(enhanceContrast);
+		gbcL.gridx=1; gbcL.gridy++; left_p.add(new JLabel("Enhance contrast"),gbcL);
+		gbcL.gridx=1; gbcL.gridy++; left_p.add(fieldContrastEnhance,gbcL);
 
+		fieldGBlurSigma = new JFormattedTextField(formatDouble);
+		fieldGBlurSigma.setColumns(20);
+		fieldGBlurSigma.setValue(gBlurSigma);
+		gbcL.gridx=1; gbcL.gridy++; left_p.add(new JLabel("Gaussian blur sigma"),gbcL);
+		gbcL.gridx=1; gbcL.gridy++; left_p.add(fieldGBlurSigma,gbcL);
+
+		fieldMinSize = new JFormattedTextField(formatInteger);
+		fieldMinSize.setColumns(20);
+		fieldMinSize.setValue(minSize);
+		gbcL.gridx=1; gbcL.gridy++; left_p.add(new JLabel("Minimum CFU size"),gbcL);
+		gbcL.gridx=1; gbcL.gridy++; left_p.add(fieldMinSize,gbcL);
+
+		fieldMinCirc = new JFormattedTextField(formatDouble);
+		fieldMinCirc.setColumns(20);
+		fieldMinCirc.setValue(minCirc);
+		gbcL.gridx=1; gbcL.gridy++; left_p.add(new JLabel("Minimum CFU circularity"),gbcL);
+		gbcL.gridx=1; gbcL.gridy++; left_p.add(fieldMinCirc,gbcL);
 
 		//right panel with buttons
 		Panel right_p = new Panel();		
@@ -189,9 +145,7 @@ public class AutoDetect extends JDialog implements ActionListener {
 		
 		JButton bCancel = new JButton("Close");
 		bCancel.setActionCommand("CANCEL");
-		bCancel.addActionListener(this);
-		
-		chkDelete = new JCheckBox("Delete CFUs before applying");
+		bCancel.addActionListener(this);			
 		
 		JButton bApply = new JButton("Apply");
 		bApply.setActionCommand("APPLY");
@@ -209,9 +163,8 @@ public class AutoDetect extends JDialog implements ActionListener {
 		bApplyPlate.setActionCommand("APPLYPLATE");
 		bApplyPlate.addActionListener(this);
 		
-		gbc.gridx=0;
-		gbc.gridy=0; right_p.add(chkDelete,gbc);
-		gbc.gridy++; right_p.add(bApply,gbc);
+		gbc.gridx=0;		
+		gbc.gridy=0; right_p.add(bApply,gbc);
 		gbc.gridy++; right_p.add(bApplyRow,gbc);
 		gbc.gridy++; right_p.add(bApplyColumn,gbc);
 		gbc.gridy++; right_p.add(bApplyPlate,gbc);
@@ -233,25 +186,22 @@ public class AutoDetect extends JDialog implements ActionListener {
 		setVisible(true);
 	}
 
-	public void updateParametersFromDisplay() {
+	public void updateParametersFromDisplay() {		
+		defaultCFUtype = (String) (comboBoxCFUtype.getSelectedItem());
 		lightBackground = chkLightBackground.isSelected();
-		minCirc = sliderMinCirc.getValue()/100.0;
-		minSize = sliderMinSize.getValue()*5;
-		sensitivityInf = sliderSensitivityInf.getValue()/100.0;
-		sensitivitySupFrom = sliderSensitivitySupFrom.getValue()/100.0;
-		sensitivitySupTo = sliderSensitivitySupTo.getValue()/100.0;
-		sensitivitySupNbValues = Integer.parseInt(fieldSensitivitySupNbValues.getValue().toString());
+		gBlurSigma = Double.parseDouble(fieldGBlurSigma.getValue().toString());
+		enhanceContrast = Double.parseDouble(fieldContrastEnhance.getValue().toString());
+		minCirc    = Double.parseDouble(fieldMinCirc.getValue().toString()); 				
+		minSize    = Integer.parseInt(fieldMinSize.getValue().toString());
 	}
 	
-	public void updateDisplayFromParameters() {
+	public void updateDisplayFromParameters() {		 
+		comboBoxCFUtype.setSelectedItem(defaultCFUtype);		
 		chkLightBackground.setSelected(lightBackground);
-		sliderMinCirc.setValue((int)(100.0*minCirc));
-		sliderMinCirc.setValue((int)(100.0*minCirc)); 
-		sliderMinSize.setValue((int)(minSize/5.0));
-		sliderSensitivityInf.setValue((int)(100.0*sensitivityInf));
-		sliderSensitivitySupFrom.setValue((int)(100.0*sensitivitySupFrom));
-		sliderSensitivitySupTo.setValue((int)(100.0*sensitivitySupTo));
-		fieldSensitivitySupNbValues.setValue(sensitivitySupNbValues);
+		fieldGBlurSigma.setValue(gBlurSigma);
+		fieldContrastEnhance.setValue(enhanceContrast);
+		fieldMinCirc.setValue(minCirc);
+		fieldMinSize.setValue(minSize);
 	}
 	
 	public void readParameters() {
@@ -263,6 +213,7 @@ public class AutoDetect extends JDialog implements ActionListener {
 		}
 		readParameters(f);		
 	}
+	
 	public void readParameters(File f) {	
 		if(!f.exists()) return;
 		//read parameters from file
@@ -282,13 +233,12 @@ public class AutoDetect extends JDialog implements ActionListener {
 		}
 		
 		ArrayList<String> tags = new ArrayList<String>();
-		tags.add("LIGHT BACKGROUND");
-		tags.add("MIN SIZE");
-		tags.add("MIN CIRCULARITY");
-		tags.add("MIN SENSITIVITY");
-		tags.add("MAX SENSITIVITY FROM");
-		tags.add("MAX SENSITIVITY TO");
-		tags.add("MAX SENSITIVITY NB VALUES");
+		tags.add("LIGHT BACKGROUND"); 		//0
+		tags.add("MIN SIZE");         		//1
+		tags.add("MIN CIRCULARITY");  		//2
+		tags.add("ENHANCE CONTRAST"); 		//3
+		tags.add("GAUSSIAN BLUR SIGMA");    //4
+		tags.add("DEFAULT CFU TYPE");		//5
 		
 		//int pos = -1;
 		for(int line = 0;line<content.size();line++) {
@@ -300,48 +250,27 @@ public class AutoDetect extends JDialog implements ActionListener {
 				if(cells[0].equals(tags.get(0))) lightBackground = cells[1].equals("true");
 				if(cells[0].equals(tags.get(1))) minSize = Integer.parseInt(cells[1]);
 				if(cells[0].equals(tags.get(2))) minCirc = Double.parseDouble(cells[1]);
-				if(cells[0].equals(tags.get(3))) sensitivityInf = Double.parseDouble(cells[1]);
-				if(cells[0].equals(tags.get(4))) sensitivitySupFrom = Double.parseDouble(cells[1]);
-				if(cells[0].equals(tags.get(5))) sensitivitySupTo = Double.parseDouble(cells[1]);
-				if(cells[0].equals(tags.get(6))) sensitivitySupNbValues = Integer.parseInt(cells[1]);
+				if(cells[0].equals(tags.get(3))) enhanceContrast = Double.parseDouble(cells[1]);
+				if(cells[0].equals(tags.get(4))) gBlurSigma = Double.parseDouble(cells[1]);
+				if(cells[0].equals(tags.get(5))) defaultCFUtype = cells[1];				
 			}
 		}
 
 	}
 	
 	public int apply(ImagePlus imp,Well w) {
+		int slice = imp.getSlice(); //detection will be performed on currently selected slice
 		return apply(imp,w,slice);	
 	}
 	
 	public int apply(ImagePlus imp,Well w,int sl) {
 		//TODO apply to current slice, not default slice so that when autodetect is applied to plate, the same slice is always analyzed.
 		
-		if(chkDelete.isSelected()) {
-			w.deleteAllCFU();
-		}
+		//pre-existing CFU should probably always been deleted before detection		
+		w.deleteAllCFU();	
+		w.detectCFU(imp.duplicate(),sl,gBlurSigma,enhanceContrast,lightBackground,minSize,minCirc,defaultCFUtype);
 		
-		//convert image to gray scale (slice sl should be selected)
-		ImagePlus impCpy = w.convertImageToGrayLevels(imp,sl,chkLightBackground.isSelected());
-		
-		int firstCFU = w.getNbCFU();
-		double delta = (sensitivitySupTo-sensitivitySupFrom)/(double) sensitivitySupNbValues;
-		for(double s=sensitivitySupTo;s>=sensitivitySupFrom;s-=delta) {
-			//detection on gray scale image
-			//splitting is done once, after all contours have been detected !
-			w.detectCFU(impCpy, sensitivityInf,s, chkLightBackground.isSelected(),false,minSize, minCirc);
-		}		
-		//split
-		if(chkAutoSplit.isSelected()) {
-			if(chkLightBackground.isSelected()) {
-				ImageProcessor ip = impCpy.getProcessor();
-				ip.invert();
-				impCpy.setProcessor(ip);				
-			}
-			// w.splitToMax(impCpy,chkLightBackground.isSelected(),minSize, minCirc,false); // not bubble
-			w.splitToMax(impCpy,firstCFU,chkLightBackground.isSelected(),minSize, minCirc,true); // bubble
-		}
-		impCpy.flush();
-		return firstCFU;
+		return w.getNbCFU();
 	}
 	
 	@Override
@@ -356,7 +285,7 @@ public class AutoDetect extends JDialog implements ActionListener {
 			
 			img.drawCFU();			
 			for (ImageWellListener hl : img.getListeners()) {
-				if(chkDelete.isSelected()) hl.CFUremoved();
+				hl.CFUremoved();
 				hl.CFUadded();
 				hl.CFUedited();
 				hl.SelectionHasChanged();	    			
@@ -420,10 +349,9 @@ public class AutoDetect extends JDialog implements ActionListener {
 				}
 				writer.println("MIN SIZE;"+minSize);
 				writer.println("MIN CIRCULARITY;"+minCirc);
-				writer.println("MIN SENSITIVITY;"+sensitivityInf);
-				writer.println("MAX SENSITIVITY FROM;"+sensitivitySupFrom);
-				writer.println("MAX SENSITIVITY TO;"+sensitivitySupTo);
-				writer.println("MAX SENSITIVITY NB VALUES;"+sensitivitySupNbValues);
+				writer.println("ENHANCE CONTRAST;"+enhanceContrast);
+				writer.println("GAUSSIAN BLUR SIGMA;"+gBlurSigma);
+				writer.println("DEFAULT CFU TYPE;"+defaultCFUtype);				
 				writer.close();
 			} catch(Exception ex) {
 

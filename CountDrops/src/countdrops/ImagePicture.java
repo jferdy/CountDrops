@@ -1,6 +1,7 @@
 package countdrops;
 
 import java.awt.Dimension;
+import java.awt.GraphicsDevice;
 import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -17,6 +18,7 @@ import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
+import javax.swing.JFrame;
 
 import ij.IJ;
 import ij.ImagePlus;
@@ -191,7 +193,8 @@ public class ImagePicture implements ViewWellListener {
 		//add new custom listeners
 		canvas.addMouseListener(canvasMouseListener);
 		canvas.addMouseMotionListener(canvasMouseMotionListener);		
-		canvas.addKeyListener(canvasKeyListener);
+		canvas.addKeyListener(canvasKeyListener);			
+		 
 	}
 
 	public Overlay getOverlay() { return overlay;}
@@ -309,20 +312,14 @@ public class ImagePicture implements ViewWellListener {
 		window = null;				
 	}
 
-	public void openViewWell(Well w) {
-		Point loc = null;
-		//shift in location if some instances of ViewWell are already opened?
+	public void openViewWell(Well w) {		
 		/*
-		if(openedViewWell.size()>0) {
-			loc = openedViewWell.get(openedViewWell.size()-1).getLocation();
-		} else {
-			loc = this.getImageWindow().getLocation();			
-		}
-		if(openedViewWell.size()>0) {
-			//shift location so that all active ViewWell instances can be seen
-			//does not work when ViewWell is opened by newViewWellAsked, because parent ViewWell instance is closed afterwards
-			loc.setLocation(loc.getX()+100,loc.getY()+50);
-		}*/		
+		 * Point loc = null; if(openedViewWell.size()>0) { loc =
+		 * openedViewWell.get(openedViewWell.size()-1).getLocation(); } else { loc =
+		 * this.getImageWindow().getLocation(); } ViewWellEvent evt = new
+		 * ViewWellEvent(w,loc); 
+		 * openViewWell(w,evt);
+		 */	
 		openViewWell(w,null);
 	}
 	
@@ -350,6 +347,24 @@ public class ImagePicture implements ViewWellListener {
 			vw.addListener(this); //ImagePicture listens to ViewWell
 			vw.addListener(gui);  //main gui also listens to adjust ExperimentTree to changes in CFU number
 			
+			GraphicsDevice device; 			
+			if(openedViewWell.size()>0) {
+				//vw on the same screen than the last opened ViewWell
+				device = openedViewWell.get(openedViewWell.size()-1).getGraphicsConfiguration().getDevice();
+			} else {			
+				//vw on the same screen than plate image
+				device = this.getImageWindow().getGraphicsConfiguration().getDevice(); 
+			}
+			//device.setFullScreenWindow( vw );
+			
+			//move vw to the right screen 
+			int width = device.getDefaultConfiguration().getBounds().width;
+	        int height = device.getDefaultConfiguration().getBounds().height;
+	        vw.setLocation(
+	            ((width / 2) - (vw.getSize().width / 2)) + device.getDefaultConfiguration().getBounds().x, 
+	            ((height / 2) - (vw.getSize().height / 2)) + device.getDefaultConfiguration().getBounds().y
+	        );
+	        
 			openedWell.add(w);
 			openedViewWell.add(vw);
 
