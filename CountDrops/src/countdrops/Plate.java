@@ -28,6 +28,9 @@ public class Plate {
 	private int      sizeMin = 20;
 	private double   circMin = 0.2;
 
+	private boolean Xreversed = false;
+	private boolean Yreversed = false;
+	
 	private ArrayList<Well> wells = new ArrayList<Well>();
 
 	public Plate(PlateSettings s) throws Exception {		
@@ -132,7 +135,7 @@ public class Plate {
 		return(settings.getCFUType().get(index));
 	}
 	
-	private int getFieldsTypeAsInt(int i) {
+	public int getFieldsTypeAsInt(int i) {
 		if("int".equals(getFieldsType(i))) return 1;
 		if("boolean".equals(getFieldsType(i))) return 2;
 		if("float".equals(getFieldsType(i))) return 3;
@@ -140,6 +143,9 @@ public class Plate {
 		return -1;
 	}
 
+	public boolean isXreversed() {return(Xreversed);}
+	public boolean isYreversed() {return(Yreversed);}
+	
 	public  void  setLightBackground(boolean t) {lightBackground=t;}
 	public  void  setSizeMin(int x) {sizeMin = x;}
 	public  void  setCircMin(double x) {circMin = x;}
@@ -246,6 +252,10 @@ public class Plate {
 				wells.add(w);		
 			}
 		}
+		
+		//guess if plate is reversed (e.g. A1 on the right side and A12 on the left)
+		if(getWell(0,0).getX()>getWell(0,1).getX()) Xreversed = true;
+		if(getWell(0,0).getX()<getWell(1,0).getX()) Yreversed = true;
 	}    
 
 	public void updateWellDilutionAndVolume() {

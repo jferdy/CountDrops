@@ -11,9 +11,9 @@ public class ViewWellEvent extends EventObject {
     String action;
     AutoDetect autoDetect;
     
-	private int locationX;
-    private int locationY;
-    private Dimension windowSize; 
+	private int locationX = 0;
+    private int locationY = 0;
+    private Dimension windowSize = null; 
     private GraphicsDevice screen = null;
     
     private int     slice = -1;
@@ -23,6 +23,8 @@ public class ViewWellEvent extends EventObject {
     private boolean changeType = false;  //CheckBox change type on click
     private int     selectedType = 0;    //selected CFU type 
     private double  canvasMagnification = 1.0; //magnification
+    private boolean Xreversed = false;
+    private boolean Yreversed = false;
     
 	public ViewWellEvent(Well w,Point loc) {
     	super(w);
@@ -42,6 +44,20 @@ public class ViewWellEvent extends EventObject {
     public int getX() {return locationX;}
     public int getY() {return locationY;}
     public Well getWell() {return well;}
+    
+    public boolean isXreversed( ) {
+    	return(Xreversed);	
+    }
+    public void setXreversed(boolean b) {
+    	Xreversed = b;    	
+    }
+    
+    public boolean isYreversed( ) {
+    	return(Yreversed);	
+    }
+    public void setYreversed(boolean b) {
+    	Yreversed = b;    	
+    }
     
     public boolean isDoWand() {
 		return doWand;

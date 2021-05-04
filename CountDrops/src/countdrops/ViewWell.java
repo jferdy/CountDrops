@@ -1,5 +1,6 @@
 package countdrops;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GraphicsDevice;
@@ -66,11 +67,13 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 	
 	private GraphCanvas graphicStatistics = null;
 	
-	// key pressed
+	// key pressed and other flags
 	// private KeyStrokeAction keyStrokeAction;
 	private Boolean CTRLpressed = false;
 	private Boolean SHIFTpressed = false;
 	private Boolean ALTpressed = false;
+	private boolean Xreversed = false;
+	private boolean Yreversed = false;
 
 	public ViewWell(ImageWell ximg,ViewWellEvent evt,SampleStatistics stat) { 
 		super();
@@ -92,8 +95,10 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		}
 		if(evt!=null) {
 			img.setSlice(evt.getSlice());
+			Xreversed = evt.isXreversed();
+			Yreversed = evt.isYreversed();
 		}
-						
+								
 		//If no CFU and no NC, well is set to empty
 		//This is to speed up things when scanning a bunch of empty wells: you don't have to click on 
 		//anything, well will be set to empty automatically.
@@ -106,16 +111,13 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		
 		// window dimensions and position
 		int imgWidth = img.getImagePlus().getWidth();
-		this.setPreferredSize(new Dimension(imgWidth*2+1200, 700));
+		this.setPreferredSize(new Dimension(imgWidth*2+1200, 1000));
 		setResizable(true);
 		
 		this.setUndecorated(false); //for some reason the cross button to cose dialog does not show up...		
 		setTitle(img.getImagePlus().getTitle());
 				
 		
-		Panel main_panel = new Panel();
-		main_panel.setLayout(new BoxLayout(main_panel, BoxLayout.LINE_AXIS));
-
 		Panel p_image = new Panel();
 		p_image.setLayout(new BoxLayout(p_image, BoxLayout.PAGE_AXIS));
 		
@@ -125,9 +127,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		// left panel ***********************************************************************
 		// contains the cfuTable and the summaryTable, plus associated checkboxes and buttons
 		// **********************************************************************************
-		Panel p_left = new Panel();
-		p_left.setLayout(new BoxLayout(p_left, BoxLayout.PAGE_AXIS));
-
+		
 		// creates cfuTable
 		cfuTableModel = new CFUTableModel(img);
 		cfuTable = new JTable(cfuTableModel);		
@@ -138,8 +138,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		cfuTable.setRowSelectionAllowed(true);
 		cfuTable.setColumnSelectionAllowed(false); 
 		cfuTableRowListener = new CFUTableRowListener(img, cfuTable);
-		cfuTable.getSelectionModel().addListSelectionListener(
-				cfuTableRowListener);		
+		cfuTable.getSelectionModel().addListSelectionListener(cfuTableRowListener);		
 		
 		// this allows to sort the table by clicking on column headers
 		cfuTableSorter = new TableRowSorter<CFUTableModel>(cfuTableModel);
@@ -147,18 +146,18 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		cfuTable.addKeyListener(this);
 
 		// scroll panel for cfuTable
-		cfuTable.setPreferredScrollableViewportSize(new Dimension(200,100));
+		cfuTable.setPreferredSize(new Dimension(100,50));
+		cfuTable.setPreferredScrollableViewportSize(new Dimension(100,50));
 		cfuTable.setFillsViewportHeight(true);
 		JScrollPane cfuTableScrollPanel = new JScrollPane(cfuTable,
 				ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS,
 				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		p_left.add(new JLabel("Table of CFUs"));
-		p_left.add(cfuTableScrollPanel);
-
+		
 		// bottom part of left panel
 		Panel p_left_bottom = new Panel();
 		p_left_bottom.setLayout(new BoxLayout(p_left_bottom,
 				BoxLayout.LINE_AXIS));
+		
 		// creates summaryTable
 		Panel p_left_bottom_left = new Panel();
 		p_left_bottom_left.setLayout(new BoxLayout(p_left_bottom_left,
@@ -210,8 +209,6 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		Panel p_left_bottom_right = new Panel();
 		//p_left_bottom_right.setBackground(Color.cyan);
-		p_left_bottom_right.setMaximumSize(new Dimension(400,200));
-		p_left_bottom_right.setMinimumSize(new Dimension(400,200));
 		
 		p_left_bottom_right.setLayout(new GridBagLayout());
         GridBagConstraints gbc_br = new GridBagConstraints();        
@@ -312,32 +309,82 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		p_left_bottom.add(p_left_bottom_left);
 		p_left_bottom.add(Box.createRigidArea(new Dimension(5, 0)));
 		p_left_bottom.add(p_left_bottom_right);
-		p_left.add(p_left_bottom);
-		p_left.add(Box.createRigidArea(new Dimension(0,5)));
 		
-		// right panel **********************************************************
-		// contains navigation buttons, copy buttons and description of shortcuts
-		//***********************************************************************
-		Panel p_right = new Panel();
-		p_right.setLayout(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.weightx = 1;
-        gbc.gridwidth = 2;
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.insets = new Insets(4, 4, 4, 4);
-        gbc.anchor = GridBagConstraints.WEST;
+        //title *****************************************************************	        		
+		JLabel title = new JLabel("Plate "+img.getWell().getPlate()+" -- Well "+img.getWell().getName());
+		title.setFont(title.getFont().deriveFont((float) 24.0));				
 
-		gbc.anchor = GridBagConstraints.CENTER; //navigation panel is centered in the right panel
-		JLabel title = new JLabel(img.getWell().getPlate()+" -- "+img.getWell().getName());
-		title.setFont(title.getFont().deriveFont((float) 18.0));
-		gbc.gridx=0; p_right.add(title);
-		gbc.gridy++;
+		//create and populate left panel
+		Panel p_left = new Panel();
+		//p_left.setLayout(new BoxLayout(p_left, BoxLayout.PAGE_AXIS));
+		p_left.setLayout(new GridBagLayout());
+        GridBagConstraints gbc_l = new GridBagConstraints();        
+        gbc_l.weightx = 0.5;
+        gbc_l.weighty = 0.0;        
+        gbc_l.insets = new Insets(4, 4, 4, 4);
+        gbc_l.anchor = GridBagConstraints.CENTER;
+        gbc_l.fill = GridBagConstraints.HORIZONTAL;
+        gbc_l.gridx=0;
+		
+        gbc_l.gridy=0; p_left.add(title,gbc_l); //add title
+		gbc_l.gridy=1; p_left.add(new JLabel("Table of CFUs"),gbc_l);
+		gbc_l.gridy=2; p_left.add(cfuTableScrollPanel,gbc_l);
+		gbc_l.gridy=3; p_left.add(p_left_bottom,gbc_l);
+		
 
+		//****************************************************************************************
+		// right panel ***************************************************************************
+		// contains navigation buttons, copy buttons, summary graphic and description of shortcuts
+		//****************************************************************************************
+        
+		//the copy buttons panel ********************************************************
+		        	
+		JTextPane cpylab= new JTextPane();
+		cpylab.setContentType("text/html");
+		cpylab.setBackground(this.getBackground());		
+		cpylab.setText("<html><p style=\"font-family:Dialog\">Copy state of current well (empty, ignored or non-countable) to other wells.</p></html>");				
+		cpylab.setFocusable(false);
+		cpylab.setPreferredSize(new Dimension(50,50));				
+
+		bCpy_row = new JButton("Copy to row");
+		bCpy_row.setActionCommand("COPYTOROW");
+		bCpy_row.addActionListener(this);
+		bCpy_row.setAlignmentX((float) 0.0);
+		bCpy_row.setFocusable(false);
+		
+		bCpy_col = new JButton("Copy to column");
+		bCpy_col.setActionCommand("COPYTOCOL");
+		bCpy_col.addActionListener(this);
+		bCpy_col.setAlignmentX((float) 0.0);
+		bCpy_col.setFocusable(false);		
+		
+		bCpy_plate = new JButton("Copy to plate");
+		bCpy_plate.setActionCommand("COPYTOPLATE");
+		bCpy_plate.addActionListener(this);
+		bCpy_plate.setAlignmentX((float) 0.0);
+		bCpy_plate.setFocusable(false);		
+		
+		Panel p_cpy_button = new Panel();
+		p_cpy_button.setLayout(new GridBagLayout());
+		p_cpy_button.setBackground(Color.PINK);
+        GridBagConstraints gbcpy = new GridBagConstraints();
+                       
+        gbcpy.weightx = 0.5;
+        gbcpy.weighty = 0.0;
+        gbcpy.gridwidth = 1;
+        gbcpy.gridheight = 1;        
+        gbcpy.fill = GridBagConstraints.HORIZONTAL;
+        gbcpy.anchor = GridBagConstraints.WEST;
+        gbcpy.insets = new Insets(4, 4, 4, 4);
+
+        gbcpy.gridx=0; gbcpy.gridy=0; p_cpy_button.add(cpylab,gbcpy);
+        gbcpy.gridx=0; gbcpy.gridy++; p_cpy_button.add(bCpy_row,gbcpy);
+        gbcpy.gridx=0; gbcpy.gridy++; p_cpy_button.add(bCpy_col,gbcpy);
+        gbcpy.gridx=0; gbcpy.gridy++; p_cpy_button.add(bCpy_plate,gbcpy);
+		
 		//the navigation panel **************************************************
-		Panel p_right_top = new Panel();
-		p_right_top.setLayout(new GridLayout(0,3));
+		Panel p_navigation = new Panel();
+		p_navigation.setLayout(new GridLayout(0,3));
 		
 		//load icons for navigation buttons 
 		ImageIcon icon_left = CountDrops.getIcon("go-previous.png");		
@@ -347,108 +394,72 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		
 		//creates navigation buttons
 		JButton b_left = new JButton(icon_left);
-		b_left.setActionCommand("MOVELEFT");
+		if(Xreversed) {
+			b_left.setActionCommand("MOVERIGHT");
+			if(img.getWell().getColInPlate()==img.getPlate().getNCOLS()-1) b_left.setEnabled(false);
+		} else {
+			b_left.setActionCommand("MOVELEFT");
+			if(img.getWell().getColInPlate()==0) b_left.setEnabled(false);
+		}
 		b_left.addActionListener(this);
-		b_left.setFocusable(false);
-		if(img.getWell().getColInPlate()==0) b_left.setEnabled(false);
+		b_left.setFocusable(false);		
 		
 		JButton b_right = new JButton(icon_right);
-		b_right.setActionCommand("MOVERIGHT");
+		if(Xreversed) {
+			b_right.setActionCommand("MOVELEFT");
+			if(img.getWell().getColInPlate()==0) b_right.setEnabled(false);
+		} else {
+			b_right.setActionCommand("MOVERIGHT");
+			if(img.getWell().getColInPlate()==img.getPlate().getNCOLS()-1) b_right.setEnabled(false);
+		}
 		b_right.addActionListener(this);
 		b_right.setFocusable(false);
-		if(img.getWell().getColInPlate()==img.getPlate().getNCOLS()-1) b_right.setEnabled(false);
+		
 		
 		JButton b_up = new JButton(icon_up);
-		b_up.setActionCommand("MOVEUP");
+		if(Yreversed) {
+			b_up.setActionCommand("MOVEDOWN");
+			if(img.getWell().getRowInPlate()==img.getPlate().getNROWS()-1) b_up.setEnabled(false);
+		} else {
+			b_up.setActionCommand("MOVEUP");
+			if(img.getWell().getRowInPlate()==0) b_up.setEnabled(false);
+		}
 		b_up.addActionListener(this);
-		b_up.setFocusable(false);
-		if(img.getWell().getRowInPlate()==0) b_up.setEnabled(false);
-		//b_up.setPreferredSize(b_left.getPreferredSize());
+		b_up.setFocusable(false);			
 		
 		JButton b_down = new JButton(icon_down);
+		if(Yreversed) {
+			b_down.setActionCommand("MOVEUP");
+			if(img.getWell().getRowInPlate()==0) b_down.setEnabled(false);
+		} else {
+			b_down.setActionCommand("MOVEDOWN");
+			if(img.getWell().getRowInPlate()==img.getPlate().getNROWS()-1) b_down.setEnabled(false);
+		}
 		b_down.setActionCommand("MOVEDOWN");
 		b_down.addActionListener(this);
 		b_down.setFocusable(false);
-		if(img.getWell().getRowInPlate()==img.getPlate().getNROWS()-1) b_down.setEnabled(false);
-		//b_down.setPreferredSize(b_left.getPreferredSize());
 				
 		//first line
-		p_right_top.add(Box.createRigidArea(new Dimension(5, 0)));
-		p_right_top.add(b_up);
-		p_right_top.add(Box.createRigidArea(new Dimension(5, 0)));
+		p_navigation.add(Box.createRigidArea(new Dimension(5, 0)));
+		p_navigation.add(b_up);
+		p_navigation.add(Box.createRigidArea(new Dimension(5, 0)));
 		//second line
-		p_right_top.add(b_left);
-		p_right_top.add(Box.createRigidArea(new Dimension(5, 0)));
-		p_right_top.add(b_right);
+		p_navigation.add(b_left);
+		p_navigation.add(Box.createRigidArea(new Dimension(5, 0)));
+		p_navigation.add(b_right);
 		//third line
-		p_right_top.add(Box.createRigidArea(new Dimension(5, 0)));
-		p_right_top.add(b_down);
-		p_right_top.add(Box.createRigidArea(new Dimension(5, 0)));
-		        
-		gbc.anchor = GridBagConstraints.CENTER; //navigation panel is centered in the right panel
-		gbc.gridx=0; p_right.add(p_right_top,gbc);
-		gbc.gridy++;
+		p_navigation.add(Box.createRigidArea(new Dimension(5, 0)));
+		p_navigation.add(b_down);
+		p_navigation.add(Box.createRigidArea(new Dimension(5, 0)));
+		p_navigation.setBackground(Color.GREEN);
 		
 		chkCloseWhenMoving = new JCheckBox("Close window after moving");
-		chkCloseWhenMoving.setSize((int)(p_right_top.getWidth()*0.5), 50);
+		chkCloseWhenMoving.setSize((int)(p_navigation.getWidth()*0.5), 50);
 		chkCloseWhenMoving.setAlignmentX((float) 0.5);
 		chkCloseWhenMoving.setSelected(true);
-		chkCloseWhenMoving.setFocusable(false);
-		
-		p_right.add(chkCloseWhenMoving,gbc);
-		gbc.gridy++;
-		
-		gbc.anchor = GridBagConstraints.WEST; //other components will be  left aligned 			
-		p_right.add(Box.createRigidArea(new Dimension(0,25)),gbc);
-		gbc.gridy++;
-		
-		// the copy panel ******************************************************************
-		JTextPane lab= new JTextPane();
-		lab.setContentType("text/html");
-		lab.setBackground(this.getBackground());		
-		lab.setText("<html><p style=\"font-family:Dialog\">Copy state of current well (empty, ignored or non-countable) to other wells.</p></html>");				
-		lab.setFocusable(false);
-		lab.setPreferredSize(new Dimension(150,50));
-		
-		gbc.fill=GridBagConstraints.HORIZONTAL;
-		p_right.add(lab,gbc);
-		gbc.gridy++;
-						
-		Panel p_right_bottom = new Panel();
-		p_right_bottom.setLayout(new BoxLayout(p_right_bottom,BoxLayout.PAGE_AXIS));		
-		//p_right_bottom.setBackground(Color.YELLOW);
-						
-		bCpy_row = new JButton("Copy to row");
-		bCpy_row.setActionCommand("COPYTOROW");
-		bCpy_row.addActionListener(this);
-		bCpy_row.setAlignmentX((float) 0.0);
-		bCpy_row.setFocusable(false);
-		p_right_bottom.add(bCpy_row);
-		
-		bCpy_col = new JButton("Copy to column");
-		bCpy_col.setActionCommand("COPYTOCOL");
-		bCpy_col.addActionListener(this);
-		bCpy_col.setAlignmentX((float) 0.0);
-		bCpy_col.setFocusable(false);
-		p_right_bottom.add(bCpy_col);
-		
-		bCpy_plate = new JButton("Copy to plate");
-		bCpy_plate.setActionCommand("COPYTOPLATE");
-		bCpy_plate.addActionListener(this);
-		bCpy_plate.setAlignmentX((float) 0.0);
-		bCpy_plate.setFocusable(false);
-		p_right_bottom.add(bCpy_plate);
-		
-		gbc.fill=GridBagConstraints.NONE;
-		p_right.add(p_right_bottom,gbc);		
-		gbc.gridy++; 
-		
-		gbc.fill = GridBagConstraints.VERTICAL;
-		p_right.add(Box.createVerticalGlue(),gbc);
-		gbc.gridy++;
-		
-		// the shortcuts *********************************************************************
-		gbc.fill = GridBagConstraints.HORIZONTAL;
+		chkCloseWhenMoving.setFocusable(false);					
+																
+		// the shortcuts *********************************************************************		
 		//using JLabel here would be possible but
 		//pack does not compute multi-line JLabel dimensions correctly...
 		JTextPane textShortCuts = new JTextPane();
@@ -457,70 +468,157 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		//System.out.println(this.getFont());
 		textShortCuts.setText("<html>" +
 					"<h2 style=\"font-family:Dialog\">Shortcuts</h2>" +
-				    "<p style=\"font-family:Dialog\">" + //;width:300px
-						"<b>[SPACE]</b> : display/hide all CFUs<br>"+
-						"<b>[CTRL]+a</b> : select all CFUs<br>" +
-						"<b>[ESC]</b> : unselect all CFUs<br>" +
-						"<b>[SUPPR]</b> : delete selected CFUs<br>" +
-						"<b>[CRTL][SHIFT]+Key</b> : change type of selected CFUs<br><br>" +				
-						"<b>[CTRL]+[SHIFT]+click</b> : change CFU to current type<br>"+
-						"<b>[CTRL]+[ALT]+click</b> : split CFU<br><br>"+
-						"<b>[ALT]+UP/DOWN</b> : zoom in/out<br>"+				
-						"<b>[ALT]+RIGHT/LEFT</b> : change image slice<br><br>"+
-						"<b>[CRTL]+RIGHT/LEFT/UP/DOWN</b> : move to a neighbor well<br>" +
-						"<b>[CTRL]+w</b> : close window"+
-					"</p></html>");
+				    "<table style=\"font-family:Dialog\">"+
+				    "<tr>"+
+				    "<td>"+
+					"<b>[SPACE]</b> : display/hide all CFUs<br>"+
+					"<b>[CTRL]+a</b> : select all CFUs<br>" +
+					"<b>[ESC]</b> : unselect all CFUs<br>" +
+				    "</td>"+
+					"<td>"+
+					"<b>[SUPPR]</b> : delete selected CFUs<br>" +
+					"<b>[CTRL]+[ALT]+click</b> : split CFU<br><br>"+
+					"<b>[CRTL][SHIFT]+Key</b> : change type of selected CFUs<br>" +				
+					"<b>[CTRL]+[SHIFT]+click</b> : change CFU to current type<br>"+						
+				    "</td>"+
+					"<td>"+
+					"<b>[ALT]+UP/DOWN</b> : zoom in/out<br>"+				
+					"<b>[ALT]+RIGHT/LEFT</b> : change image slice<br><br>"+
+					"<b>[CRTL]+RIGHT/LEFT/UP/DOWN</b> : move to a neighbor well<br>" +
+					"<b>[CTRL]+w</b> : close window"+
+					"</td>"+
+					"</tr>"+
+				    "</table></html>");
 		textShortCuts.setEditable(false);
-		textShortCuts.setFocusable(false);
-		
-		p_right.add(textShortCuts,gbc);
-		gbc.gridy++;
+		textShortCuts.setFocusable(false);		
 						
-		p_right.add(new JLabel("Summary of counts for sample "+stat.getID()),gbc);
-		gbc.gridy++;
-					
-		gbc.gridwidth = 2;
-		gbc.gridx=0;
-		p_right.add(graphicStatistics,gbc);
-		gbc.gridy++;
-		
+		//the summary graphic************************
+		JLabel labgraph = new JLabel("Summary of counts for sample "+stat.getID());
+				
 		JCheckBox chkLogScaleX = new JCheckBox("Use log scale for dilutions");
 		chkLogScaleX.setSelected(true);
 		chkLogScaleX.setFocusable(false);
 		chkLogScaleX.setActionCommand("LOGSCALEX"); 
 		chkLogScaleX.addActionListener(this);
-		
-		gbc.gridwidth = 1;
-		gbc.gridx=0;
-		p_right.add(chkLogScaleX,gbc);
-		
-		
+				
 		JCheckBox chkLogScaleY = new JCheckBox("Use log scale for counts");
 		chkLogScaleY.setSelected(false);
 		chkLogScaleY.setFocusable(false);
 		chkLogScaleY.setActionCommand("LOGSCALEY"); 
 		chkLogScaleY.addActionListener(this);
+
+		//create and populate right panel**********************************************		
+		Panel p_right = new Panel();
+		p_right.setLayout(new GridBagLayout());		
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.weightx = 0.5;
+        gbc.weighty = 0.25;
+        gbc.gridwidth = 1;
+        gbc.gridheight = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(4, 4, 4, 4);
+
+        gbc.gridx=0;
+		gbc.gridy=1; 
+		gbc.gridheight=1;
+		gbc.gridwidth =1;
+		gbc.anchor = GridBagConstraints.CENTER; 
+		gbc.fill = GridBagConstraints.NONE;
+		p_right.add(p_navigation,gbc); //add navigation panel lines 1 to 3
 		
-		gbc.gridwidth = 1;
-		gbc.gridx=1;
-		p_right.add(chkLogScaleY,gbc);
-		gbc.gridy++;
-		
-		gbc.gridwidth = 2;
 		gbc.gridx=0;
-		
-		main_panel.add(p_image);
-		main_panel.add(Box.createRigidArea(new Dimension(5, 0)));
-		main_panel.add(p_left);
-		main_panel.add(Box.createRigidArea(new Dimension(5, 0)));
-		main_panel.add(p_right);
+		gbc.gridy=2; 
+		gbc.gridheight=1;
+		gbc.gridwidth = 1;
+		p_right.add(chkCloseWhenMoving,gbc); //add checkbox "close when moving" below navigation panel
 				
+		gbc.gridx=1;
+		gbc.gridy=1;		
+		p_right.add(p_cpy_button,gbc); //add copy buttons
+				
+		gbc.gridx=0;
+		gbc.gridy=3; 
+		gbc.gridheight=1;
+		gbc.gridwidth = 2;
+		gbc.anchor = GridBagConstraints.CENTER; 
+		gbc.fill = GridBagConstraints.HORIZONTAL;		
+		p_right.add(labgraph,gbc); //add summary graphic label
+		
+		gbc.gridx=0;
+		gbc.gridy=4; 
+		gbc.gridheight=1;
+		gbc.gridwidth = 2;
+		//gbc.weighty = 1.0;
+		gbc.anchor = GridBagConstraints.CENTER; 
+		gbc.fill = GridBagConstraints.HORIZONTAL;		
+		p_right.add(graphicStatistics,gbc); //add summary graphic		
+				
+		gbc.gridx=0;
+		gbc.gridy=5; 
+		gbc.gridheight=1;
+		gbc.gridwidth = 1;
+		//gbc.weighty = 0.0;
+		gbc.anchor = GridBagConstraints.CENTER; 
+		gbc.fill = GridBagConstraints.HORIZONTAL;		
+		p_right.add(chkLogScaleX,gbc); //add checkbox x scale 
+
+		gbc.gridx=1;
+		gbc.gridy=5; 
+		gbc.gridheight=1;
+		gbc.gridwidth = 1;
+		gbc.anchor = GridBagConstraints.CENTER; 
+		gbc.fill = GridBagConstraints.HORIZONTAL;		
+		p_right.add(chkLogScaleY,gbc); //add checkbox y scale 
+
+		gbc.gridx=0;
+		gbc.gridy=6; 
+		gbc.gridheight=1;
+		gbc.gridwidth = 2;
+		gbc.anchor = GridBagConstraints.CENTER; 
+		gbc.fill = GridBagConstraints.NONE;		
+		p_right.add(textShortCuts,gbc); //add shortcuts 
+		
+		//set dimensions of the components
+		int prefwidth_l = 700;
+		int prefwidth_r = 400;
+		p_left .setPreferredSize(new Dimension(prefwidth_l,800));
+		graphicStatistics.setMinimumSize(new Dimension(prefwidth_r*9/10,prefwidth_r*7/10));
+		p_right .setPreferredSize(new Dimension(prefwidth_r,800));
+
+		cfuTableScrollPanel.setPreferredSize(new Dimension(prefwidth_l,200));
+		p_left_bottom.setPreferredSize(new Dimension(prefwidth_l,200));
+		p_left_bottom_left.setMaximumSize(new Dimension(prefwidth_l/2,200));
+		p_left_bottom_right.setMaximumSize(new Dimension(prefwidth_l/2,200));
+		
+		graphicStatistics.setPreferredSize(new Dimension(prefwidth_r,200));
+		
+		//Create and populate main panel
+		Panel main_panel = new Panel();		
+		//main_panel.setLayout(new BoxLayout(main_panel, BoxLayout.LINE_AXIS));
+		main_panel.setLayout(new GridBagLayout());		
+        GridBagConstraints gbc_main = new GridBagConstraints();
+        gbc_main.weightx = 1.0;
+        gbc_main.weighty = 0.0;
+        gbc_main.fill = GridBagConstraints.NONE;
+        gbc_main.anchor = GridBagConstraints.CENTER;
+        gbc_main.insets = new Insets(4, 4, 4, 4);
+        gbc_main.gridy=0; 
+        
+		gbc_main.gridx=0; main_panel.add(p_image,gbc_main);
+		gbc_main.gridx=1; main_panel.add(Box.createRigidArea(new Dimension(5, 0)),gbc_main);
+		gbc_main.fill = GridBagConstraints.HORIZONTAL; gbc_main.gridx=2; main_panel.add(p_left,gbc_main);
+		gbc_main.fill = GridBagConstraints.NONE; gbc_main.gridx=3; main_panel.add(Box.createRigidArea(new Dimension(5, 0)),gbc_main);
+		gbc_main.fill = GridBagConstraints.HORIZONTAL; gbc_main.gridx=4; main_panel.add(p_right,gbc_main);
+
+
 		this.setContentPane(main_panel);
 		pack();
 		
+		
 		//position and size
 		if(evt!=null) {				
-			setSize(evt.getWindowSize());
+			if(evt.getWindowSize()!=null) setSize(evt.getWindowSize());
 			setLocation(evt.getLocation());												
 		} else {
 			setLocationRelativeTo(null); //center JFrame on screen
@@ -608,7 +706,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		}
 	}
 	
-	public void moveToNeighborWell(String where) throws InterruptedException {
+	public void moveToNeighborWell(String where) throws InterruptedException {		
 		if(where.equals("MOVERIGHT") && img.getWell().getColInPlate()>=img.getPlate().getNCOLS()-1) return;
 		if(where.equals("MOVELEFT")  && img.getWell().getColInPlate()<=0) return;
 		if(where.equals("MOVEDOWN")  && img.getWell().getRowInPlate()>=img.getPlate().getNROWS()-1) return;
@@ -685,7 +783,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		}
 		
 		if(action == "AUTODETECT") {
-			new AutoDetect(img,viewWellEvent,listViewWellListener);
+			AutoDetect ad = new AutoDetect(img,viewWellEvent,listViewWellListener);
 			cfuTable.requestFocus();			
 		}
 
@@ -777,7 +875,8 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		case KeyEvent.VK_KP_RIGHT:
 			if (CTRLpressed && !ALTpressed) {
 				try {
-					moveToNeighborWell("MOVERIGHT");
+					if(Xreversed) moveToNeighborWell("MOVELEFT");
+					else moveToNeighborWell("MOVERIGHT");					
 				} catch (InterruptedException ex) {}
 			}
 			if (!CTRLpressed && ALTpressed){
@@ -790,7 +889,8 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		case KeyEvent.VK_KP_LEFT:
 			if (CTRLpressed && !ALTpressed) {
 				try {
-				  moveToNeighborWell("MOVELEFT");
+					if(Xreversed) moveToNeighborWell("MOVERIGHT");
+					else moveToNeighborWell("MOVELEFT");
 				} catch (InterruptedException ex) {}
 			}
 			if (!CTRLpressed && ALTpressed){
@@ -810,7 +910,8 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 			}
 			if(CTRLpressed) {
 				try {
-				  moveToNeighborWell("MOVEUP");
+				  if(Yreversed) moveToNeighborWell("MOVEDOWN");
+				  else moveToNeighborWell("MOVEUP");
 				} catch (InterruptedException ex) {}
 			}
 			break;
@@ -824,7 +925,8 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 			}
 			if(CTRLpressed) {
 				try {
-				  moveToNeighborWell("MOVEDOWN");
+				  if(Yreversed) moveToNeighborWell("MOVEUP");
+				  else moveToNeighborWell("MOVEDOWN");
 				} catch (InterruptedException ex) {}
 			}
 			break;

@@ -54,7 +54,6 @@ public class AutoDetect extends JDialog implements ActionListener {
 	public AutoDetect(ImageWell i,ViewWellEvent e,ArrayList<ViewWellListener> l) {
 		super();
 		setModal(true);
-		
 				
 		img = i;
 		slice = img.getImagePlus().getSlice();
@@ -69,7 +68,7 @@ public class AutoDetect extends JDialog implements ActionListener {
 		//read parameters from autoDetect.cfg (if it exists)
 		readParameters();
 		
-		//left panel with slider
+		//left panel with form
 		Panel left_p = new Panel();
 		left_p.setLayout(new GridBagLayout());
         GridBagConstraints gbcL = new GridBagConstraints();
@@ -181,8 +180,15 @@ public class AutoDetect extends JDialog implements ActionListener {
 		p.add(right_p);
 		add(p);
 		
+		
+		if(e!=null) {			
+			setLocation(e.getLocation());
+			//TODO does not seem to work... dialog is not on the same screen than ViewWell when not on default screen
+		} else {
+			setLocationRelativeTo(null);
+		}
+		
 		pack();
-		setLocationRelativeTo(null);
 		setVisible(true);
 	}
 

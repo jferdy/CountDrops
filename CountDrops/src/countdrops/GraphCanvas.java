@@ -1,6 +1,7 @@
 package countdrops;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -39,11 +40,12 @@ public class GraphCanvas extends JPanel implements MouseMotionListener {
         public GraphCanvas(SampleStatistics st) {
             super();
             statistics = st;
-            
+                        
             ptX = new int[statistics.getNBcounts()];
             ptY = new int[statistics.getNBcounts()];
-            
-            setBackground(new java.awt.Color(255, 255, 255));
+                        
+            //setMinimumSize(new Dimension(100,100));
+            setBackground(new java.awt.Color(255, 255, 255));            
             setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
             
             updateMinMaxX();
@@ -85,7 +87,7 @@ public class GraphCanvas extends JPanel implements MouseMotionListener {
         	if(statistics==null) return;
         	            
         	minY = -1;
-            maxY = 0;
+            maxY = 5;
             for(int i = 0; i < statistics.getNBcounts(); i++) {
             	double z = statistics.getCount(i, CFUtype);
             	if(logScaleY) {
@@ -101,6 +103,9 @@ public class GraphCanvas extends JPanel implements MouseMotionListener {
             	}
             }
             if(minY<0) minY = 0;
+            
+            minY = (int) (minY/5)*5.0;
+            maxY = (1+(int) (maxY/5))*5.0;
             scaleY = 1.0/(maxY-minY);
         }
                 
@@ -108,6 +113,7 @@ public class GraphCanvas extends JPanel implements MouseMotionListener {
             super.paintComponent(g0);
             Graphics2D g = (Graphics2D) g0;
             
+            //box
             FontMetrics metrics = g.getFontMetrics();
             htext = metrics.getHeight();            
             grWidth = getWidth()-(pointRadius+4*htext);
@@ -129,6 +135,7 @@ public class GraphCanvas extends JPanel implements MouseMotionListener {
             g.setTransform(tr);
             */
             
+            //x axis label
             String str = "dilution";
             if(logScaleX) {
             	str = str + " (log scale)";            
@@ -139,6 +146,7 @@ public class GraphCanvas extends JPanel implements MouseMotionListener {
             if(CFUtype<0) return;
             updateMinMaxY();
             
+            //draw points
             Color bgColor = Color.WHITE;
             if(CFUtype>0) {
             	bgColor = statistics.getCFUColor(CFUtype-1);
@@ -220,19 +228,35 @@ public class GraphCanvas extends JPanel implements MouseMotionListener {
             	str = ""+z;
             	g.drawString(str,x-metrics.stringWidth(str)/2,y+htext);
             }
+            
           //draws ticks and tick labels on y scale            
-          int x = 4*htext;  
-          for(int i=0;i<5;i++) {
-        	  double z = minY + (maxY-minY)*i/5.0;
-        	  y = pointRadius + (int) (grHeight*(1-(z-minY)*scaleY));
-        	  if(logScaleY) {
-        		  str = ""+((int) (Math.pow(10.0,z)*100))/100.0;
+          int x = 4*htext;
+          double dy = (maxY-minY)/5.0;
+          
+          if(dy<1.0) {
+        	  dy = 1.0;
+          } else {  
+        	  if(dy>5.0) {
+        		  dy = (int) (dy/5);
+        		  dy *= 5.0;
         	  } else {
-        		  str = ""+((int) z*100)/100.0;  
-        	  }        	  
-        	          	  
-        	  g.drawLine(x-5,y,x,y);        	  
-        	  g.drawString(str,x-6-metrics.stringWidth(str),y+htext/3);
+        		  dy = 5.0;
+        	  }
+          }
+          
+          double z = 0.0;          
+          while(z<maxY) {
+        	  if(z>=minY) {        		  
+        	  	  y = pointRadius + (int) (grHeight*(1-(z-minY)*scaleY));
+        	  	  if(logScaleY) {
+        	  		  str = ""+((int) (Math.pow(10.0,z)*100))/100.0;
+        	  	  } else {
+        	  		  str = ""+((int) z*100)/100.0;  
+        	  	  }        	          	          	  
+        	  	  g.drawLine(x-5,y,x,y);        	  
+        	  	  g.drawString(str,x-6-metrics.stringWidth(str),y+htext/3);
+        	  }
+        	  z+=dy;        	  
           }
         }
         

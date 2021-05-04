@@ -313,14 +313,10 @@ public class ImagePicture implements ViewWellListener {
 	}
 
 	public void openViewWell(Well w) {		
-		/*
-		 * Point loc = null; if(openedViewWell.size()>0) { loc =
-		 * openedViewWell.get(openedViewWell.size()-1).getLocation(); } else { loc =
-		 * this.getImageWindow().getLocation(); } ViewWellEvent evt = new
-		 * ViewWellEvent(w,loc); 
-		 * openViewWell(w,evt);
-		 */	
-		openViewWell(w,null);
+		
+		  openViewWell(w,null);
+		 	
+		//openViewWell(w,null);
 	}
 	
 	public void openViewWell(Well w,ViewWellEvent evt) {		
@@ -341,30 +337,61 @@ public class ImagePicture implements ViewWellListener {
 		if(!w.isLocked()) {
 			SampleStatistics stat = gui.getStatistics(w);
 			
-			ImageWell iw = new ImageWell(imp,selectedPlate,w);								
+			ImageWell iw = new ImageWell(imp,selectedPlate,w);
+			
+			if(evt==null ) { //create ViewWellEvent
+			  Point loc = null; 
+			  GraphicsDevice device;
+			  if(openedViewWell.size()>0) { 
+				  device = openedViewWell.get(openedViewWell.size()-1).getGraphicsConfiguration().getDevice();
+				  loc = openedViewWell.get(openedViewWell.size()-1).getLocation(); 
+			  } else { 
+				  device = this.getImageWindow().getGraphicsConfiguration().getDevice();
+				  loc = this.getImageWindow().getLocation(); 				  
+			  } 
+			  
+			  evt = new ViewWellEvent(w,loc);
+			  evt.setScreen(device);
+			}
+			  
+			
+			evt.setXreversed(selectedPlate.isXreversed());
+			evt.setYreversed(selectedPlate.isYreversed());
+				
+//			GraphicsDevice device; 			
+//			if(openedViewWell.size()>0) {
+//				//vw on the same screen than the last opened ViewWell
+//				device = openedViewWell.get(openedViewWell.size()-1).getGraphicsConfiguration().getDevice();
+//			} else {			
+//				//vw on the same screen than plate image
+//				device = this.getImageWindow().getGraphicsConfiguration().getDevice(); 
+//			}
+//			evt.setScreen(device);
+			
+			
 			ViewWell  vw = new ViewWell(iw,evt,stat);
 			
 			vw.addListener(this); //ImagePicture listens to ViewWell
 			vw.addListener(gui);  //main gui also listens to adjust ExperimentTree to changes in CFU number
 			
-			GraphicsDevice device; 			
-			if(openedViewWell.size()>0) {
-				//vw on the same screen than the last opened ViewWell
-				device = openedViewWell.get(openedViewWell.size()-1).getGraphicsConfiguration().getDevice();
-			} else {			
-				//vw on the same screen than plate image
-				device = this.getImageWindow().getGraphicsConfiguration().getDevice(); 
-			}
-			//device.setFullScreenWindow( vw );
 			
-			//move vw to the right screen 
-			int width = device.getDefaultConfiguration().getBounds().width;
-	        int height = device.getDefaultConfiguration().getBounds().height;
-	        vw.setLocation(
-	            ((width / 2) - (vw.getSize().width / 2)) + device.getDefaultConfiguration().getBounds().x, 
-	            ((height / 2) - (vw.getSize().height / 2)) + device.getDefaultConfiguration().getBounds().y
-	        );
-	        
+			/*
+			 * GraphicsDevice device; if(openedViewWell.size()>0) { //vw on the same screen
+			 * than the last opened ViewWell device =
+			 * openedViewWell.get(openedViewWell.size()-1).getGraphicsConfiguration().
+			 * getDevice(); } else { //vw on the same screen than plate image device =
+			 * this.getImageWindow().getGraphicsConfiguration().getDevice(); }
+			 * //device.setFullScreenWindow( vw );
+			 * 
+			 * //move vw to the right screen int width =
+			 * device.getDefaultConfiguration().getBounds().width; int height =
+			 * device.getDefaultConfiguration().getBounds().height; vw.setLocation( ((width
+			 * / 2) - (vw.getSize().width / 2)) +
+			 * device.getDefaultConfiguration().getBounds().x, ((height / 2) -
+			 * (vw.getSize().height / 2)) + device.getDefaultConfiguration().getBounds().y
+			 * );
+			 */	        
+			
 			openedWell.add(w);
 			openedViewWell.add(vw);
 
