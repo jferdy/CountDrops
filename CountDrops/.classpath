@@ -8,5 +8,15 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="resources"/>
 	<classpathentry exported="true" kind="lib" path="/usr/share/java/ij.jar"/>
+	<classpathentry kind="lib" path="lib/miglayout-swing.jar" sourcepath="lib/miglayout-swing-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/CountDrops/lib/miglayout-swing-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="lib/miglayout-core.jar" sourcepath="lib/miglayout-core-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/CountDrops/lib/miglayout-core-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

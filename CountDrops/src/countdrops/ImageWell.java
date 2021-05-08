@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.MenuItem;
 import java.awt.Point;
 import java.awt.PopupMenu;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyListener;
@@ -335,6 +336,7 @@ public class ImageWell {
 		}
 	}	
 	public void setCFURadius(int r) {cfuRadius = r;}
+	public void setDoWandTolerance(int t) {doWandTolerance = t;}
 	public void setDefaultCFURadius() {cfuRadius = imp.getWidth()/25;;}
 	public Boolean isMute() { return isMute;}
 	public int getNbCFU() {return well.getNbCFU();}
@@ -417,12 +419,10 @@ public class ImageWell {
     public void drawWellContour() {
     	overlay.clear();
 		if(showWellContour) {    
-			int d = (int) (well.getD()*canvas.getMagnification());
-			int x = (canvas.getWidth()-d)/2;
-			OvalRoi w = new OvalRoi(x,x,d,d); //TODO don't know why but doesn't work if I use getHeight for y...
-			w.setStrokeColor(Color.gray);
-			overlay.add(w);			
+			well.draw(canvas);
     	}
+		canvas.repaint();
+		imp.updateAndRepaintWindow();
     }
     
     public void drawNewCFU() {						
@@ -643,6 +643,7 @@ public class ImageWell {
     	if(createCFUwithMagicWand) {
     		//do Wand at clicked point
     		IJ.doWand(imp,x,y,doWandTolerance,doWandMode);
+    		if(imp.getRoi() == null) return(null);
     		p = new ShapeRoi(imp.getRoi().getPolygon());
     		imp.deleteRoi(); //otherwise roi keeps being displayed
     	} else {

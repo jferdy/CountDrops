@@ -17,6 +17,8 @@ public class ViewWellEvent extends EventObject {
     private GraphicsDevice screen = null;
     
     private int     slice = -1;
+    private int     circleRadius = 12;
+    private int     doWandTolerance = 40;
 	private boolean closeWhenMoving = false;
     private boolean doWand = false;      //CheckBox create with DoWand
     private boolean showWellContour = false;      //CheckBox create with DoWand
@@ -58,7 +60,14 @@ public class ViewWellEvent extends EventObject {
     public void setYreversed(boolean b) {
     	Yreversed = b;    	
     }
+
+    public void setDoWandTolerance(int t) {
+    	doWandTolerance = t;
+    }
     
+    public void setCircleRadius(int r) {
+    	circleRadius = r;
+    }
     public boolean isDoWand() {
 		return doWand;
 	}
@@ -90,6 +99,14 @@ public class ViewWellEvent extends EventObject {
 	}
 	public void setSlice(int sl) {
 		slice =sl;
+	}
+	
+	public int getCircleRadius() {
+		return(circleRadius);	
+	}
+	
+	public int getDoWandTolerance()   {
+		return(doWandTolerance);	
 	}
 	
 	public int getSelectedType() {

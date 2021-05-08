@@ -299,6 +299,8 @@ public class CountDrops implements ActionListener, ViewWellListener {
 		p.add(p_right);
 		gui.add(p);
 		
+		gui.setResizable(false);
+		
 		gui.pack();
 		gui.setVisible(true);
 

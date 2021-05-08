@@ -20,6 +20,7 @@ import javax.swing.JOptionPane;
 
 import ij.IJ;
 import ij.ImagePlus;
+import ij.gui.ImageCanvas;
 import ij.gui.NewImage;
 import ij.gui.OvalRoi;
 import ij.gui.Overlay;
@@ -463,7 +464,17 @@ public class Well {
 		imp.setRoi(roi);
 	}
 
-	public void draw(Overlay ov) {
+	public void draw(ImageCanvas ic) { //draw well contour on well image				
+		double d = D*ic.getMagnification();					
+		Rectangle bounds = ic.getSrcRect(); //ic.getBounds(); // I don't really get why getBOunds and getSrcRect do not return the same thing
+		int x = (int) (bounds.getCenterX() * ic.getMagnification() - d/2.0);
+		int y = (int) (bounds.getCenterY() * ic.getMagnification() - d/2.0);
+		OvalRoi contour = new OvalRoi(x,y,d,d);			
+		contour.setStrokeColor(Color.gray);
+		ic.getOverlay().add(contour);
+	}
+
+	public void draw(Overlay ov) { //draw well contour on plate image
 		setStroke();
 		
 		ov.add(roi);
@@ -499,7 +510,7 @@ public class Well {
 		if(hasNACFU()) {
 			TextRoi txt = new TextRoi(x+6,y,"NA");																
 			txt.setJustification(TextRoi.LEFT);
-			txt.setFillColor(Color.gray);
+			txt.setFillColor(Color.ORANGE);
 			TextRoi.setColor(Color.white);			
 
 			ov.add(txt);			
