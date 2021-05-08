@@ -13,7 +13,6 @@ import java.io.FileInputStream;
 import java.io.PrintWriter;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.Scanner;
 
 import javax.swing.Box;
@@ -24,11 +23,9 @@ import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
-import javax.swing.JSlider;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import ij.ImagePlus;
-import ij.process.ImageProcessor;
 
 
 public class AutoDetect extends JDialog implements ActionListener {
@@ -79,7 +76,7 @@ public class AutoDetect extends JDialog implements ActionListener {
         gbcL.gridy=0;
 		
 
-		Hashtable<Integer,JLabel> labelTable;
+		//Hashtable<Integer,JLabel> labelTable;
 
 		NumberFormat formatInteger = NumberFormat.getInstance();
 		formatInteger.setMaximumFractionDigits(0);
@@ -181,15 +178,14 @@ public class AutoDetect extends JDialog implements ActionListener {
 		add(p);
 		
 		
-		if(e!=null) {			
-			setLocation(e.getLocation());
-			//TODO does not seem to work... dialog is not on the same screen than ViewWell when not on default screen
-		} else {
-			setLocationRelativeTo(null);
-		}
+//		if(e!=null) {			
+//			setLocation(e.getLocation());
+//			//TODO does not seem to work... dialog is not on the same screen than ViewWell when not on default screen
+//		} else {
+//			setLocationRelativeTo(null);
+//		}
 		
-		pack();
-		setVisible(true);
+		pack();		
 	}
 
 	public void updateParametersFromDisplay() {		

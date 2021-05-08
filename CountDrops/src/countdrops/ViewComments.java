@@ -61,13 +61,11 @@ public class ViewComments extends JDialog implements ActionListener, KeyListener
 		
 		update();
 		
-		this.setMinimumSize(new Dimension(500,0));
-		setLocationRelativeTo(null); //center JDialog on screen
-		
+		this.setMinimumSize(new Dimension(500,0));		
 		addListener(parent);
 		
 		this.setModal(true);
-		setVisible(true);
+		//setVisible(true);
 	}
 	
 	public void update() {

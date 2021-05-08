@@ -1,15 +1,10 @@
 package countdrops;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GraphicsDevice;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.GridLayout;
-import java.awt.Insets;
 import java.awt.Panel;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -26,7 +21,6 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
-import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -38,7 +32,6 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTable;
-import javax.swing.JTextPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SpinnerModel;
@@ -395,40 +388,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		p_navigation.add(Box.createRigidArea(new Dimension(5, 0)));
 		p_navigation.add(b_down);
 		p_navigation.add(Box.createRigidArea(new Dimension(5, 0)));
-																			
-		// the shortcuts *********************************************************************		
-		//using JLabel here would be possible but
-		//pack does not compute multi-line JLabel dimensions correctly...
-//		JTextPane textShortCuts = new JTextPane();
-//		textShortCuts.setContentType("text/html");
-//		textShortCuts.setBackground(this.getBackground());
-//		//System.out.println(this.getFont());
-//		textShortCuts.setText("<html>" +
-//					"<h2 style=\"font-family:Dialog\">Shortcuts</h2>" +
-//				    "<table style=\"font-family:Dialog\">"+
-//				    "<tr>"+
-//				    "<td>"+
-//					"<b>[SPACE]</b> : display/hide all CFUs<br>"+
-//					"<b>[CTRL]+a</b> : select all CFUs<br>" +
-//					"<b>[ESC]</b> : unselect all CFUs<br>" +
-//				    "</td>"+
-//					"<td>"+
-//					"<b>[SUPPR]</b> : delete selected CFUs<br>" +
-//					"<b>[CTRL]+[ALT]+click</b> : split CFU<br><br>"+
-//					"<b>[CRTL][SHIFT]+Key</b> : change type of selected CFUs<br>" +				
-//					"<b>[CTRL]+[SHIFT]+click</b> : change CFU to current type<br>"+						
-//				    "</td>"+
-//					"<td>"+
-//					"<b>[ALT]+UP/DOWN</b> : zoom in/out<br>"+				
-//					"<b>[ALT]+RIGHT/LEFT</b> : change image slice<br><br>"+
-//					"<b>[CRTL]+RIGHT/LEFT/UP/DOWN</b> : move to a neighbor well<br>" +
-//					"<b>[CTRL]+w</b> : close window"+
-//					"</td>"+
-//					"</tr>"+
-//				    "</table></html>");
-//		textShortCuts.setEditable(false);
-//		textShortCuts.setFocusable(false);		
-						
+																								
 		//the summary graphic************************
 		JLabel sampleTitle = new JLabel("Sample "+stat.getID());
 		sampleTitle.setFont(title.getFont().deriveFont((float) 24.0));
@@ -454,10 +414,6 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		int widthLeft = 2*ximg.getImagePlus().getWidth();
 		int widthCenter = ((int) (screenSize.getWidth())-widthLeft)/2; 
 		int widthRight = (int) (screenSize.getWidth()-widthLeft-widthCenter );
-
-		JPanel main_panel = new JPanel();				
-		main_panel.setLayout(new GridLayout(0,3)); //3 columns of equal width
-		main_panel.setPreferredSize(screenSize);
 				
 		// left panel contains title, image, comment and help buttons
 		JPanel left_panel = new JPanel();
@@ -471,8 +427,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		bottom_left_panel.setLayout(new BoxLayout(bottom_left_panel, BoxLayout.LINE_AXIS));
 		bottom_left_panel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
 		bottom_left_panel.add(Box.createHorizontalGlue());
-		bottom_left_panel.add(buttonComment);
-		bottom_left_panel.add(Box.createRigidArea(new Dimension(10, 0)));
+		bottom_left_panel.add(buttonComment);		
 		bottom_left_panel.add(buttonHelp);
 		left_panel.add(bottom_left_panel);
 		
@@ -566,6 +521,10 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		center_panel.setBorder(BorderFactory.createEmptyBorder(28,5,0,5));
 		right_panel.setBorder(BorderFactory.createEmptyBorder(0,5,0,10));
 		
+		JPanel main_panel = new JPanel();				
+		main_panel.setLayout(new GridLayout(0,3)); //3 columns of equal width
+		main_panel.setPreferredSize(screenSize);
+
 		main_panel.add(left_panel);
 		main_panel.add(center_panel);
 		main_panel.add(right_panel);
@@ -724,6 +683,12 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 	public void actionPerformed(ActionEvent e) {
 		String action = e.getActionCommand();
 
+		if (action == "VIEWHELP") {
+			HelpViewWell h = new HelpViewWell();
+			h.setLocationRelativeTo(this);
+			h.setVisible(true);
+		}
+		
 		if (action == "DELETE") {
 			img.deleteAllCFU();
 			return;
@@ -770,13 +735,17 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		}
 		
 		if(action == "AUTODETECT") {
-			new AutoDetect(img,viewWellEvent,listViewWellListener);
+			AutoDetect a = new AutoDetect(img,viewWellEvent,listViewWellListener);
+			a.setLocationRelativeTo(this);
+			a.setVisible(true);
 			cfuTable.requestFocus();			
 		}
 
 		if(action == "VIEWCOMMENTS") {
 			//System.out.println("view comments!");
-			new ViewComments(comments,this);			
+			ViewComments vc = new ViewComments(comments,this);
+			vc.setLocationRelativeTo(this);
+			vc.setVisible(true);
 		}
 		
 		if(action == "LOGSCALEX") {
