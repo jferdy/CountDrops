@@ -244,7 +244,12 @@ public class CFU {
 			imp.setSlice(i+1);
 
 			ImageProcessor ip = imp.getProcessor();
-			ImageProcessor mask = roi!=null?roi.getMask():null;
+			ImageProcessor mask;
+			try {
+				mask = roi.getMask();
+			} catch (Exception e) {
+				mask = null;
+			}
 			Rectangle r = roi!=null?roi.getBounds():new Rectangle(0,0,ip.getWidth(),ip.getHeight());
 			double sum = 0;
 			int count = 0;
@@ -355,8 +360,15 @@ public class CFU {
 	}
 
 	public boolean contains(int x,int y) {
-		if(roi==null) return(false);
-		return(roi.contains(x,y));
+		boolean inside;
+		try {			
+			inside = roi.contains(x,y);
+			//System.out.print("("+x+","+y+") ["+roi.getBounds().getX()+","+roi.getBounds().getMaxX()+","+roi.getBounds().getY()+","+roi.getBounds().getMaxY()+"]"+inside+"\n");
+		} catch(Exception e) {
+			System.out.print("Cannot test if point is inside CFU "+CFUName+"!\n");
+			inside = false;	
+		}		
+		return(inside);
 	}
 
 	public double overlap(CFU cfu) {

@@ -162,7 +162,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		p_left_bottom_left.add(chkEmpty);
 
 		//Counts from wells that have the ignore tag are not exported in the result file.
-		chkIgnore = new JCheckBox("Counts from this well should not be written in result file");
+		chkIgnore = new JCheckBox("Ignore data from this well in result file");
 		chkIgnore.setAlignmentX((float) 0.0); // left alignement
 		chkIgnore.setFocusable(false);
 		chkIgnore.setSelected(img.getWell().isIgnored());
@@ -187,6 +187,8 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		summaryTable.setAlignmentX((float) 0.0);			
 		JTableHeader summaryHeader = summaryTable.getTableHeader(); //header must be added to panel explicitly because summaryTable is not inside a JScroll...
 		summaryHeader.setAlignmentX(summaryTable.getAlignmentX());
+		summaryTable.setToolTipText("Select line to change the current type of CFU");
+		
 		p_left_bottom_left.add(summaryHeader);
 		p_left_bottom_left.add(summaryTable);
 		
@@ -199,7 +201,8 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		buttonComment.setFocusable(false);
 		buttonComment.setOpaque(false);
 		buttonComment.setContentAreaFilled(false);
-		buttonComment.setBorderPainted(false);					
+		buttonComment.setBorderPainted(false);		
+		buttonComment.setToolTipText("View/add comments for this well.");
 
 		//view help
 		buttonHelp = new JButton();			
@@ -211,6 +214,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		buttonHelp.setOpaque(false);
 		buttonHelp.setContentAreaFilled(false);
 		buttonHelp.setBorderPainted(false);					
+		buttonHelp.setToolTipText("View help on shorcuts.");
 		
 		chkShowWellCountour = new JCheckBox("Show well contour");
 		if(evt!=null) {
@@ -219,8 +223,9 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		chkShowWellCountour.setFocusable(false);
 		chkShowWellCountour.setActionCommand("SHOWWELLCONTOUR"); 
 		chkShowWellCountour.addActionListener(this);				
+		chkShowWellCountour.setToolTipText("Display well contour on image.");
 		
-		JLabel labDoWand = new JLabel("Create CFU using DoWand");
+		JLabel labDoWand = new JLabel("Create CFU using Magic Wand");
 		ButtonGroup grpDoWand =	new ButtonGroup();
 		chkDoWandYes = new JRadioButton("Yes",true);		
 		chkDoWandNo = new JRadioButton("No",false);		
@@ -232,6 +237,8 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		chkDoWandNo.setActionCommand("DOWAND");
 		chkDoWandNo.addActionListener(this);
 		chkDoWandNo.setFocusable(false);
+		chkDoWandYes.setToolTipText("New CFUs will be created using \"Magic Wand\".");
+		chkDoWandNo.setToolTipText("New CFUs will be created as simple circles.");
 		
 		SpinnerModel spinRadiusModel = new SpinnerNumberModel(img.getCFURadius(), //initial value
                 1, //min
@@ -244,8 +251,9 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		spinRadius.addChangeListener(this);
 		//spinRadius.addKeyListener(this);
 		spinRadius.getEditor().getComponent(0).addKeyListener(this); //not great
+		spinRadius.setToolTipText("Radius of circle.");
 		
-		JLabel labSpinRadius = new JLabel("CFU radius");
+		JLabel labSpinRadius = new JLabel("Circle radius");
 		labSpinRadius.setAlignmentX( Component.RIGHT_ALIGNMENT );//0.0
 			
 		SpinnerModel spinDoWandModel = new SpinnerNumberModel(img.getCFURadius(), //initial value
@@ -253,14 +261,15 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		100, //max
 		1); 
 		spinDoWand = new JSpinner(spinDoWandModel);
-		spinDoWand.setName("DoWand tolerance");
+		spinDoWand.setName("Magic Wand tolerance");
 		spinDoWand.setFocusable(false);		
 		spinDoWand.setAlignmentX((float) 1.0);
 		spinDoWand.addChangeListener(this);		
 		//spinDoWand.addKeyListener(this);
 		spinDoWand.getEditor().getComponent(0).addKeyListener(this);
+		spinDoWand.setToolTipText("Tolerance of Magic Wand.");
 		
-		JLabel labSpinDoWand = new JLabel("Do Wand sensibility");
+		JLabel labSpinDoWand = new JLabel("Magic Wand tolerance");
 		labSpinDoWand.setAlignmentX( Component.RIGHT_ALIGNMENT );//0.0
 		
 		if(evt!=null) {
@@ -278,44 +287,50 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 			spinRadius.setEnabled(true);
 		}
 
-		img.setShowWellContour(chkShowWellCountour.isSelected());
+		img.setShowWellContour(chkShowWellCountour.isSelected());		
 		
 		JButton b1 = new JButton("Delete all");		
 		b1.setActionCommand("DELETE");
 		b1.addActionListener(this);
 		b1.setFocusable(false);		
+		b1.setToolTipText("Delete all CFUs.");
 		
 		JButton b2 = new JButton("Autodetect");
 		b2.setActionCommand("AUTODETECT");
 		b2.addActionListener(this);
 		b2.setFocusable(false);
+		b2.setToolTipText("Auto-detect CFUs in current well.");
 		
         //title *****************************************************************	        		
 		JLabel title = new JLabel("Plate "+img.getWell().getPlate()+" -- Well "+img.getWell().getName());
 		title.setFont(title.getFont().deriveFont((float) 24.0));				
 
 		
-		//the copy buttons panel ********************************************************		        	
+		//the copy buttons panel ********************************************************
+		String letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		JLabel cpylab= new JLabel("Copy \"empty\", \"ignore\" or \"infinite\" state to other wells");
 		
 		bCpy_row = new JButton("Copy to row");
 		bCpy_row.setActionCommand("COPYTOROW");
 		bCpy_row.addActionListener(this);
 		bCpy_row.setAlignmentX((float) 0.0);
-		bCpy_row.setFocusable(false);
+		bCpy_row.setFocusable(false);			
+		bCpy_row.setToolTipText("Copy empty, infinite or ignore to all wells of row "+String.valueOf(letters.charAt(img.getWell().getRowInPlate())));
 		
 		bCpy_col = new JButton("Copy to column");
 		bCpy_col.setActionCommand("COPYTOCOL");
 		bCpy_col.addActionListener(this);
 		bCpy_col.setAlignmentX((float) 0.0);
 		bCpy_col.setFocusable(false);		
+		bCpy_col.setToolTipText("Copy empty, infinite or ignore to all wells of column "+(img.getWell().getColInPlate()+1));
 		
 		bCpy_plate = new JButton("Copy to plate");
 		bCpy_plate.setActionCommand("COPYTOPLATE");
 		bCpy_plate.addActionListener(this);
 		bCpy_plate.setAlignmentX((float) 0.0);
 		bCpy_plate.setFocusable(false);		
-				
+		bCpy_plate.setToolTipText("Copy empty, infinite or ignore to all wells of plate "+img.getWell().getPlate());
+		
 		//the navigation panel **************************************************			
 		//load icons for navigation buttons 
 		ImageIcon icon_left = CountDrops.getIcon("go-previous.png");		
@@ -324,52 +339,71 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		ImageIcon icon_down = CountDrops.getIcon("go-down.png");
 		
 		//creates navigation buttons
+		int nc = img.getWell().getColInPlate();
+		int nr = img.getWell().getRowInPlate();
 		JButton b_left = new JButton(icon_left);
 		if(Xreversed) {
 			b_left.setActionCommand("MOVERIGHT");
 			if(img.getWell().getColInPlate()==img.getPlate().getNCOLS()-1) b_left.setEnabled(false);
+			nc++;
 		} else {
 			b_left.setActionCommand("MOVELEFT");
 			if(img.getWell().getColInPlate()==0) b_left.setEnabled(false);
+			nc--;			
 		}
 		b_left.addActionListener(this);
 		b_left.setFocusable(false);		
+		if(nr>=0 && nc>=0 && nr<letters.length()) b_left.setToolTipText("Move to "+letters.charAt(nr)+(nc+1));
 		
+		nc = img.getWell().getColInPlate();
+		nr = img.getWell().getRowInPlate();
 		JButton b_right = new JButton(icon_right);
 		if(Xreversed) {
 			b_right.setActionCommand("MOVELEFT");
 			if(img.getWell().getColInPlate()==0) b_right.setEnabled(false);
+			nc--;
 		} else {
 			b_right.setActionCommand("MOVERIGHT");
 			if(img.getWell().getColInPlate()==img.getPlate().getNCOLS()-1) b_right.setEnabled(false);
+			nc++;
 		}
 		b_right.addActionListener(this);
 		b_right.setFocusable(false);
+		if(nr>=0 && nc>=0 && nr<letters.length()) b_right.setToolTipText("Move to "+letters.charAt(nr)+(nc+1));
 		
-		
+		nc = img.getWell().getColInPlate();
+		nr = img.getWell().getRowInPlate();
 		JButton b_up = new JButton(icon_up);
 		if(Yreversed) {
 			b_up.setActionCommand("MOVEDOWN");
 			if(img.getWell().getRowInPlate()==img.getPlate().getNROWS()-1) b_up.setEnabled(false);
+			nr++;
 		} else {
 			b_up.setActionCommand("MOVEUP");
 			if(img.getWell().getRowInPlate()==0) b_up.setEnabled(false);
+			nr--;
 		}
 		b_up.addActionListener(this);
 		b_up.setFocusable(false);			
+		if(nr>=0 && nc>=0 && nr<letters.length()) b_up.setToolTipText("Move to "+letters.charAt(nr)+(nc+1));
 		
+		nc = img.getWell().getColInPlate();
+		nr = img.getWell().getRowInPlate();
 		JButton b_down = new JButton(icon_down);
 		if(Yreversed) {
 			b_down.setActionCommand("MOVEUP");
 			if(img.getWell().getRowInPlate()==0) b_down.setEnabled(false);
+			nr--;
 		} else {
 			b_down.setActionCommand("MOVEDOWN");
 			if(img.getWell().getRowInPlate()==img.getPlate().getNROWS()-1) b_down.setEnabled(false);
+			nr++;
 		}
 		b_down.setActionCommand("MOVEDOWN");
 		b_down.addActionListener(this);
 		b_down.setFocusable(false);
-				
+		if(nr>=0 && nc>=0 && nr<letters.length()) b_down.setToolTipText("Move to "+letters.charAt(nr)+(nc+1));
+		
 		chkCloseWhenMoving = new JCheckBox("Close window after moving");		
 		chkCloseWhenMoving.setSelected(true);
 		chkCloseWhenMoving.setFocusable(false);					
@@ -767,6 +801,8 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 	// key listener (KeyBinding should probably be used instead of KeyListener)
 	// ************************************************************************
 	public void keyPressed(KeyEvent evt) {
+		Object o = evt.getSource();
+		
 		//this seems to be necessary because if CTRL has been pressed **before** window is opened no keyEvent
 		//is issued and CTRLpressed will be wrongly set to false. Ideally this should be done upon window opening.
 		//Think about whether to add the same sort of command for alt and shift keys...
@@ -838,8 +874,8 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 			if (!CTRLpressed && ALTpressed){
 				img.nextSlice();
 			}
-			//prevent JTable to react to that key!!
-			evt.consume();
+			//prevent JTable to react to that key!!			
+			if(o.equals(cfuTable)) evt.consume();
 			break;
 		case KeyEvent.VK_LEFT:
 		case KeyEvent.VK_KP_LEFT:
@@ -852,8 +888,8 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 			if (!CTRLpressed && ALTpressed){
 				img.prevSlice();
 			}
-			//prevent JTable to react to that key!!
-			evt.consume();
+			//prevent JTable to react to that key!!				
+			if(o.equals(cfuTable)) evt.consume();
 			break;
 
 		case KeyEvent.VK_UP:

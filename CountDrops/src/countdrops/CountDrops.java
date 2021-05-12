@@ -683,13 +683,12 @@ public class CountDrops implements ActionListener, ViewWellListener {
 		}
 		
 		if(action=="NEW") {    		    
-			PlateSettings s = new PlateSettings();
-			s.setDefault();
+			SetExperimentSettings ws = new SetExperimentSettings(SetExperimentSettings.CREATE);
+			ws.setLocationRelativeTo(gui);
+			ws.setVisible(true);
 
-			SetExperimentSettings ws = new SetExperimentSettings(s,SetExperimentSettings.CREATE);
-
-			if(ws.getStatus()==SetExperimentSettings.CREATE) {
-				experiment = new Experiment(s);				
+			if(ws.getStatus()==SetExperimentSettings.CREATE) {				
+				experiment = new Experiment(ws.getSettings(),ws.getSampleID());				
 				if(experiment.save()) {
 					experimentTree.update(experiment);
 				}				
@@ -702,7 +701,9 @@ public class CountDrops implements ActionListener, ViewWellListener {
 		if(action=="EDIT") { 
 			if(experiment == null) return;
 			
-			SetExperimentSettings ws = new SetExperimentSettings(experiment.getSettings(),SetExperimentSettings.EDIT);
+			SetExperimentSettings ws = new SetExperimentSettings(experiment.getSettings(),experiment.getSampleID(),SetExperimentSettings.EDIT);
+			ws.setLocationRelativeTo(gui);
+			ws.setVisible(true);
 			if(ws.getStatus()==SetExperimentSettings.EDIT) {
 				experiment.save();				
 				//propagates changes to Pictures and Plates

@@ -29,19 +29,30 @@ public class ExperimentSettings {
 		// TODO Auto-generated constructor stub
 		NROWS = 8;
 		NCOLS = 12;
-		NFIELDS = 1;
-		NCFUTYPES = 1;
+		NFIELDS = 2;
+		NCFUTYPES = 2;
 		
-		FieldsType.add("string");
-		FieldsName.add("Name");
-		FieldsValue.add("plate 1");
-		FieldsDescription.add("Name of the plate");
-		
+		FieldsType.add("integer");
+		FieldsName.add("Plate");
+		FieldsValue.add("53");
+		FieldsDescription.add("Name of the biological samples plate");
+
+		FieldsType.add("integer");
+		FieldsName.add("Replicate");
+		FieldsValue.add("1");
+		FieldsDescription.add("Plating replicate");
+
 		CFUType.add("Bacteria");
 		CFUColor.add("-65536"); //this is red!
 		//CFUColor.add("java.awt.Color[r=255,g=0,b=0]");
 		CFUKey.add("b");
-		CFUDescription.add("A regular bacteria");
+		CFUDescription.add("A bacteria you want to count");
+		
+		CFUType.add("Contaminant");
+		CFUColor.add("-64425"); //this is not red!
+		CFUKey.add("c");
+		CFUDescription.add("A contaminant you d'ont want to count");
+
 	}
 
 	public int getNROWS() {
@@ -176,7 +187,7 @@ public class ExperimentSettings {
 			tags.add("NCFUTYPES");
 			
 			String tag = "";
-			int pos = -1;
+			//int pos = -1;
 			for(int line=0;line<content.size();line++) {
 				//split line content using ; as a separator
 				String[] cells = content.get(line).split(";");				

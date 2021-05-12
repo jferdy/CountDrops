@@ -96,17 +96,37 @@ public class PlateSettings {
 		NROWS = 8;
 		NCOLS = 12;
 
-		NFIELDS = 1;    
-		FieldsType.clear(); FieldsType.add("String"); 
-		FieldsName.clear(); FieldsName.add("Name");
-		FieldsValue.clear(); FieldsValue.add("Plate 1");
-		FieldsDescription.clear(); FieldsDescription.add("The name of the plate");
+		NFIELDS = 2; 
+		FieldsType.clear();
+		FieldsName.clear(); 
+		FieldsValue.clear(); 
+		FieldsDescription.clear();
+		
+		FieldsType.add("integer");
+		FieldsName.add("Plate");
+		FieldsValue.add("53");
+		FieldsDescription.add("Name of the plate which contains the biological samples");
 
-		NCFUTYPES = 1;
-		CFUType.clear(); CFUType.add("Bacteria");
-		CFUColor.clear(); CFUColor.add("#FF0000");
-		CFUKey.clear(); CFUKey.add("b");
-		CFUDescription.clear(); CFUDescription.add("A bacteria you want to count");
+		FieldsType.add("integer");
+		FieldsName.add("Replicate");
+		FieldsValue.add("1");
+		FieldsDescription.add("Plating replicate");
+
+		NCFUTYPES = 2;
+		CFUType.clear(); 
+		CFUColor.clear();
+		CFUKey.clear();
+		CFUDescription.clear();
+		
+		CFUType.add("Bacteria");
+		CFUColor.add("#FF0000");
+		CFUKey.add("b");
+		CFUDescription.add("A bacteria you want to count");
+		
+		CFUType.add("Contaminant");
+		CFUColor.add("#0000BB"); //this is not red!
+		CFUKey.add("c");
+		CFUDescription.add("A contaminant you'd prefer not to count");
 
 		volume = 5.0;        //volume in each well
 		dilutionScheme = 1; //1: fixed; 2: by row; 3: by column; 4: by well

@@ -32,10 +32,11 @@ public class Experiment {
 		settings = new PlateSettings();
 	}
 
-	public Experiment(PlateSettings s) {
+	public Experiment(PlateSettings s,SampleID sid) {
 		//empty experiment with settings
 		pictures = new ArrayList<Picture>();
 		settings = s;
+		sampleID = sid;
 	}
 
 	public Experiment(String path,String fileName,boolean loadPictures) throws Exception {

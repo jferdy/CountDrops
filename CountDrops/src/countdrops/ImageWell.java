@@ -25,6 +25,7 @@ import ij.gui.OvalRoi;
 import ij.gui.Overlay;
 import ij.gui.Roi;
 import ij.gui.ShapeRoi;
+import ij.process.ImageStatistics;
 
 /*
  * This class resembles ImageWindow in that it has both a ImpagePlus and a ImageCanvas
@@ -84,8 +85,8 @@ public class ImageWell {
 
 	Cursor changeTypeCursor,splitCursor;
 	
-	private void setCursor(int index) {
-		if(index>-1) {
+	private void setCursor(int index) {		
+		if(index>-1) {					
 			if(CTRLpressed && SHIFTpressed && !ALTpressed) {
 				//change type
 		        canvas.setCursor(changeTypeCursor);
@@ -93,13 +94,13 @@ public class ImageWell {
 			}
 			if(CTRLpressed && ALTpressed) {
 				//split
-				canvas.setCursor(splitCursor);
+				canvas.setCursor(splitCursor); // cursor is on a CFU and CTRL+ALT are pressed
 				return;
 			}
-			canvas.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			canvas.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)); // cursor is on a CFU
 			return;
 		} else {
-			canvas.setCursor(Cursor.getDefaultCursor());
+			canvas.setCursor(Cursor.getDefaultCursor()); //cursor is not on a CFU
 		}
 	}
 	
@@ -129,7 +130,7 @@ public class ImageWell {
 			
 			//gets CFU index from click coordinates
 			int index =	whichCFUIsPointed(evt);
-
+			
 			if(index>-1) {
 				//a CFU has been clicked on
 				//Right click triggers popup menu
@@ -170,7 +171,7 @@ public class ImageWell {
 					return;
 				}
 
-				// select / unselect CFU
+				// select / unselect this specific CFU
 				if(CTRLpressed && !SHIFTpressed && !ALTpressed) {
 					if(!selectedCFU.contains(index)) {
 						//the clicked CFU is not selected: it is added to the list
@@ -183,7 +184,7 @@ public class ImageWell {
 					return;
 				}
 
-				//CFU is selected in place of previously selected CFU	 	    		
+				//default : the clicked CFU is selected in place of all previously selected CFUs	 	    		
 				deselectAllCFU();
 				selectCFU(index);
 				drawSelectedCFU();
@@ -193,28 +194,33 @@ public class ImageWell {
 
 			//the click was not in a CFU: a new CFU created
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			CFU cfu = createCFUfromClick(startDrag);
+			CFU[] cfu = createCFUfromClick(startDrag);			
 			if(cfu==null) return;
 
-			canvas.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));			
-			cfu.write();
+			canvas.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+			for(int i=0;i<cfu.length;i++) {
+				cfu[i].write();
+				well.addCFU(cfu[i]);
+			}
 			canvas.setCursor(Cursor.getDefaultCursor());
 
-			well.addCFU(cfu);
+			
 
 			if(!showAllCFU) {
 				//the whole display is updated
 				showAllCFU = true;                   //all CFU must be displayed so that user can easily follow what he is doing
-				selectedCFU.add(well.getNbCFU()-1);	 //the newly created CFU is added to selection (so that call SUPPR deletes newly created CFUs)   			    		  
+				for(int i=0;i<cfu.length;i++) {
+					selectedCFU.add(well.getNbCFU()-1-i);	 //the newly created CFU is added to selection (so that call SUPPR deletes newly created CFUs)
+				}
 				drawSelectedCFU();	    		
 			} else {
 				//the display does not need to be updated; the newly created CFU is drawn.
-				drawNewCFU();
+				drawNewCFU(cfu.length);
 			}
 			if(!isMute) {
 				//sends event to listeners
 				for (ImageWellListener hl : listeners) {
-					hl.CFUadded();
+					hl.CFUadded();					
 					hl.SelectionHasChanged();	    			
 				}
 			}  		
@@ -239,7 +245,7 @@ public class ImageWell {
 			}
 			
 		    if(mouseDragged) { 		    	
-		    	mouseDragged = true;		    	
+		    	//mouseDragged = true;		    	
 		    	selectCFU(roi);
 		    	drawSelectedCFU();	
 		    	roi.setStrokeColor(Color.white);
@@ -425,10 +431,12 @@ public class ImageWell {
 		imp.updateAndRepaintWindow();
     }
     
-    public void drawNewCFU() {						
-		//only last CFU (i.e newly created) is added to display		
-		CFU cfu = well.getCFU(getNbCFU()-1);
-		cfu.draw(canvas);
+    public void drawNewCFU(int nb) {						
+		//only last CFU (i.e newly created) is added to display
+    	for(int i=0;i<nb;i++) {
+    		CFU cfu = well.getCFU(getNbCFU()-1-i);
+    		if(cfu!=null) cfu.draw(canvas);
+    	}
 		canvas.repaint();
 		imp.updateAndRepaintWindow();		
 	}
@@ -536,7 +544,8 @@ public class ImageWell {
     	y = canvas.offScreenY(y);
     	    	
     	for(int i=0;i<well.getNbCFU();i++) {
-    		CFU cfu = well.getCFU(i);    	
+    		CFU cfu = well.getCFU(i);    
+    		//System.out.print(i+" ");
     		if(cfu.contains(x, y)) {
     			return i;    		
     		}
@@ -629,7 +638,7 @@ public class ImageWell {
 	}
 	
 	// function to create new CFUs
-    public CFU createCFUfromClick(Point pt) {
+    public CFU[] createCFUfromClick(Point pt) {
 		if(pt==null) return null;
 		if(!isInsideImage(pt)) return null;
 		
@@ -640,20 +649,51 @@ public class ImageWell {
     	
 
     	ShapeRoi p;
+    	CFU cfu[];
     	if(createCFUwithMagicWand) {
     		//do Wand at clicked point
     		IJ.doWand(imp,x,y,doWandTolerance,doWandMode);
+    		
     		if(imp.getRoi() == null) return(null);
     		p = new ShapeRoi(imp.getRoi().getPolygon());
     		imp.deleteRoi(); //otherwise roi keeps being displayed
+    		
+    		for(int i=this.getNbCFU()-1;i>=0;i--) {
+    			ShapeRoi p2 = new ShapeRoi(well.getCFU(i).getRoi()); 
+    			p2.and(p); //should return null if no intersection
+    			if(p2!=null && p2.getBounds().getHeight()>0 && p2.getBounds().getWidth()>0) {
+    				ImageStatistics stat = p2.getStatistics();
+    				double area  = stat.area;
+    				System.out.print(area/well.getCFU(i).getArea()+"\n");
+    				if(area/well.getCFU(i).getArea() > 0.95) {    					
+    					//half of CFU i is covered by new contour
+    					deselectCFU(i);
+    					well.deleteCFU(i);
+    					if(!isMute) {
+    						//sends event to listeners
+    						for (ImageWellListener hl : listeners) {
+    							hl.CFUremoved();						    			
+    						}
+    					}  		
+    				}
+    			}
+    		}    		    		
+    		CFU newcfu = new CFU(well,p,well.getCFUType(currentCFUType));
+    		cfu = newcfu.splitWatershed();
+    		if(cfu == null) {
+    			cfu = new CFU[1];
+    			cfu[0]=newcfu;
+    		}
+    		
     	} else {
     		//select a circle around clicked point
     		int s = cfuRadius;
     		OvalRoi ov = new OvalRoi(x-s/2,y-s/2,s,s);
     		p = new ShapeRoi(ov.getPolygon());
+    		cfu = new CFU[1];
+    		cfu[0] = new CFU(well,p,well.getCFUType(currentCFUType));
     	}
-    	CFU cfu = new CFU(well,p,well.getCFUType(currentCFUType));    	
-    	
+    	     	    	
     	return cfu;
     }
 

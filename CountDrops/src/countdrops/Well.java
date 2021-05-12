@@ -492,8 +492,8 @@ public class Well {
 		if(!str.equals("")) {			
 			TextRoi txt = new TextRoi(x,y,str);																
 			txt.setJustification(TextRoi.RIGHT);
-			txt.setFillColor(Color.gray);
-			TextRoi.setColor(Color.white);			
+			txt.setFillColor(Color.white);
+			TextRoi.setColor(Color.black);			
 			
 			ov.add(txt);			
 		}
@@ -507,12 +507,10 @@ public class Well {
 			ov.add(pt2);			
 		}
 
-		if(hasNACFU()) {
-			TextRoi txt = new TextRoi(x+6,y,"NA");																
+		if(hasNACFU()) {			
+			TextRoi txt = new TextRoi(x+6,y,"NA");								
 			txt.setJustification(TextRoi.LEFT);
-			txt.setFillColor(Color.ORANGE);
-			TextRoi.setColor(Color.white);			
-
+			txt.setFillColor(Color.RED);						
 			ov.add(txt);			
 		}
 		if(hasComments()) {			

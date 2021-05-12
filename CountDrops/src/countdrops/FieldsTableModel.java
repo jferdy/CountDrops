@@ -62,7 +62,14 @@ public class FieldsTableModel extends AbstractTableModel {
 	public String getName(int row) {
 		if(row<0 || row>data.length-1) return null;
 		return (String) data[row][0];
-	}	
+	}		
+	public String[] getNames() {		
+		String[] fields = new String[data.length];
+		for(int i=0;i<data.length;i++) {
+			fields[i] = (String) data[i][0];
+		}
+		return(fields);
+	}
 	public String getType(int row) {
 		if(row<0 || row>data.length-1) return null;
 		return (String) data[row][1];

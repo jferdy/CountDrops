@@ -1,6 +1,7 @@
 package countdrops;
 
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -10,15 +11,18 @@ import java.awt.event.ActionListener;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JComboBox;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ScrollPaneConstants;
 
 
-public class SetPlateDilutionSettings extends Panel implements ActionListener {		
+public class SetPlateDilutionSettings extends JPanel implements ActionListener {		
 	private static final long serialVersionUID = 1L;
 	
 	private JComboBox<Integer> nRowsCombo = null;
@@ -37,13 +41,7 @@ public class SetPlateDilutionSettings extends Panel implements ActionListener {
 	public SetPlateDilutionSettings(PlateSettings settings) {
 		super();				
 						
-		plateDilutionSettingsEvent = new PlateDilutionSettingsEvent(settings.getNROWS(),settings.getNCOLS());
-		
-		this.setLayout(new GridBagLayout());		
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.insets = new Insets(4,4,4,4);        
-        gbc.anchor = GridBagConstraints.WEST;
+		plateDilutionSettingsEvent = new PlateDilutionSettingsEvent(settings.getNROWS(),settings.getNCOLS());						
 		
 		//combo boxes for plate dimension
 		Integer[] nRows = new Integer[16];
@@ -55,37 +53,19 @@ public class SetPlateDilutionSettings extends Panel implements ActionListener {
 		nRowsCombo.addActionListener(this);
 		nRowsCombo.setActionCommand("CHANGEDIMENSION");	
 		nRowsCombo.setLightWeightPopupEnabled (false);
-		gbc.gridx=0;
-		gbc.gridy=0;
-		add(new JLabel("Number of rows"),gbc);
-		gbc.gridx=1;
-		gbc.gridy=0;
-		add(nRowsCombo,gbc);
-		
+			
 		nColsCombo = new JComboBox<Integer>(nCols);
 		nColsCombo.setSelectedIndex(settings.getNCOLS()-1);
 		nColsCombo.addActionListener(this);
 		nColsCombo.setActionCommand("CHANGEDIMENSION");
 		nColsCombo.setLightWeightPopupEnabled (false);
-		gbc.gridx=0;
-		gbc.gridy=1;
-		add(new JLabel("Number of columns"),gbc);
-		gbc.gridx=1;
-		gbc.gridy=1;
-		add(nColsCombo,gbc);
 		
 		//formatted field for volume
-		gbc.gridx=0;
-		gbc.gridy=2;
-		add(new JLabel("Volume in microliters"),gbc);
-		gbc.gridx=1;
-		gbc.gridy=2;		
 		volumeField = new JFormattedTextField(volumeFormat);
 		volumeField.setValue(settings.getVolume());
 		volumeField.setColumns(5);
 		volumeField.setActionCommand("CHANGEVOLUME");
 		volumeField.addActionListener(this);
-		add(volumeField,gbc);				
 		
 		//comboBox for dilution scheme					
 		String[] schemes = {"Fixed","By row","By columns","Custom"};		
@@ -94,20 +74,9 @@ public class SetPlateDilutionSettings extends Panel implements ActionListener {
 		dilutionScheme.addActionListener(this);
 		dilutionScheme.setActionCommand("CHANGESCHEME");
 		dilutionScheme.setLightWeightPopupEnabled (false);
-		gbc.gridx=0;
-		gbc.gridy=3;
-		add(new JLabel("Dilution scheme"),gbc);
-		gbc.gridx=1;
-		gbc.gridy=3;
-		add(dilutionScheme,gbc);
-		gbc.gridy++;
-		gbc.gridx--;
-		
-		//JTable for dilution
-		gbc.gridx=0;
-		gbc.gridy=4;
-		add(new JLabel("Dilution factors"),gbc);
-		
+
+
+		//JTable for dilution				
 		dilutionTableModel = new DilutionTableModel(settings);
 		dilutionTable = new JTable(dilutionTableModel);		
 		dilutionTable.setDefaultRenderer(Object.class, new DilutionTableCellRenderer());		
@@ -122,16 +91,40 @@ public class SetPlateDilutionSettings extends Panel implements ActionListener {
 		JScrollPane dilutionTableScrollPanel = new JScrollPane(dilutionTable,				
 				ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
 				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+		this.setLayout(new BoxLayout(this,BoxLayout.PAGE_AXIS));
 		
-		gbc.gridx=0;
-		gbc.gridy=5;
-		gbc.gridwidth=3;
-		gbc.fill = GridBagConstraints.HORIZONTAL;		
-		add(dilutionTableScrollPanel,gbc);
-		gbc.gridy=6;
-		add(new JLabel("1 means that sample is not diluted, 10 that it is diluted 10 times, etc."),gbc);
-		gbc.gridy=7;
-		add(new JLabel("You may use scientific notation (1E3 instead of 1000) if you wish."),gbc);
+		JPanel nrowsPanel = new JPanel();
+		nrowsPanel.setLayout(new FlowLayout());		
+		nrowsPanel.add(new JLabel("Number of Rows"));		
+		nrowsPanel.add(nRowsCombo);
+		nrowsPanel.add(Box.createRigidArea(new Dimension(5,0)));
+		nrowsPanel.add(new JLabel("Number of columns"));
+		nrowsPanel.add(nColsCombo);
+		nrowsPanel.setAlignmentX(CENTER_ALIGNMENT);
+		add(nrowsPanel);
+						
+		JPanel volPanel = new JPanel();
+		volPanel.setLayout(new FlowLayout());
+		volPanel.add(new JLabel("Volume in microliters"));
+		volPanel.add(volumeField);
+		volPanel.add(Box.createRigidArea(new Dimension(5,0)));
+		volPanel.add(new JLabel("Dilution scheme"));
+		volPanel.add(dilutionScheme);
+		volPanel.setAlignmentX(CENTER_ALIGNMENT);
+		add(volPanel);
+			
+		JLabel dilLab = new JLabel("Dilution factors");
+		dilLab.setAlignmentX(CENTER_ALIGNMENT);
+		add(dilLab);
+		dilutionTableScrollPanel.setAlignmentX(CENTER_ALIGNMENT);
+		add(dilutionTableScrollPanel);
+		JLabel dilLab2 = new JLabel("1 means that sample is not diluted, 10 that it is diluted 10 times, etc.");
+		JLabel dilLab3 = new JLabel("You may use scientific notation (1E3 instead of 1000) if you wish.");
+		dilLab2.setAlignmentX(CENTER_ALIGNMENT);
+		dilLab3.setAlignmentX(CENTER_ALIGNMENT);
+		add(dilLab2);
+		add(dilLab3);
 	}
 
 	public void addListener(PlateDilutionSettingsListener toAdd) {
