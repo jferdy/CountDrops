@@ -321,7 +321,7 @@ public class SetExperimentSettings extends JDialog implements ActionListener {
 		
 		samplePanel.add(samplePanel_top);
 		samplePanel.add(samplePanel_bottom);
-		samplePanel.add(Box.createVerticalGlue());
+		samplePanel.add(Box.createVerticalGlue());	
 		
 //		fieldPanel.setMaximumSize(new Dimension(100,100));
 //		cfuPanel.setMaximumSize(new Dimension(100,100));

@@ -113,7 +113,7 @@ public class SetPlateDilutionSettings extends JPanel implements ActionListener {
 		volPanel.add(dilutionScheme);
 		volPanel.setAlignmentX(CENTER_ALIGNMENT);
 		add(volPanel);
-			
+					
 		JLabel dilLab = new JLabel("Dilution factors");
 		dilLab.setAlignmentX(CENTER_ALIGNMENT);
 		add(dilLab);

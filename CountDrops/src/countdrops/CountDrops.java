@@ -836,7 +836,7 @@ public class CountDrops implements ActionListener, ViewWellListener {
 								} catch(Exception ex) {
 									
 								}
-							}
+							}						
 							
 							@Override
 							protected void done() {
