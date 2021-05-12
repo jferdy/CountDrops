@@ -51,7 +51,7 @@ public class ExperimentSettings {
 		CFUType.add("Contaminant");
 		CFUColor.add("-64425"); //this is not red!
 		CFUKey.add("c");
-		CFUDescription.add("A contaminant you d'ont want to count");
+		CFUDescription.add("A contaminant you don't want to count");
 
 	}
 
