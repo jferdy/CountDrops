@@ -267,7 +267,7 @@ public class SetPlateSettings extends JDialog implements ActionListener {
 					if(img!=null) img.getImageWindow().setAlwaysOnTop(false);
 					return;
 				} else {
-					//if settings are created edited, they cannot be saved in a folder that already exists
+					//if settings are created, they cannot be saved in a folder that already exists
 					//TODO this prevent to have two plates with identical names for a single picture
 					//But two distinct pictures can still have plates with the same name. This is probably to avoid...
 					JOptionPane.showMessageDialog(this,"Plate cannot be created because a plate with the same name already exists for current picture.\n" +

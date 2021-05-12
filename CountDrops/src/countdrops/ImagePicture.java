@@ -425,12 +425,12 @@ public class ImagePicture implements ViewWellListener {
 		Point loc = new Point(evt.getX(),evt.getY());
 		//System.out.print(loc.getX()+" "+loc.getY()+" -> ");
 		
-		boolean closeWhenMoving = evt.isCloseWhenMoving();
-		boolean doWand = evt.isDoWand();
-		boolean changeType = evt.isChangeType();
-		int selectedType = evt.getSelectedType();
-		double mag = evt.getCanvasMagnification();
-		Dimension windowSize = evt.getWindowSize();
+//		boolean closeWhenMoving = evt.isCloseWhenMoving();
+//		boolean doWand = evt.isDoWand();
+//		boolean changeType = evt.isChangeType();
+//		int selectedType = evt.getSelectedType();
+//		double mag = evt.getCanvasMagnification();
+//		Dimension windowSize = evt.getWindowSize();
 		
 		if(openedWell.contains(w)) {
 			//opens a new ViewWell instance only if the clicked well belongs to selectedPlate !
@@ -454,7 +454,7 @@ public class ImagePicture implements ViewWellListener {
 			}
 			Well w2 = selectedPlate.getWell(row,col);
 			if(w2!=null) {				
-				if(!closeWhenMoving) {
+				if(!evt.isCloseWhenMoving()) {
 					loc.setLocation(loc.getX()+100,loc.getY()+50);
 				}
 				//open a new ViewWell instance

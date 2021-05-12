@@ -255,7 +255,7 @@ public class Plate {
 		
 		//guess if plate is reversed (e.g. A1 on the right side and A12 on the left)
 		if(getWell(0,0).getX()>getWell(0,1).getX()) Xreversed = true;
-		if(getWell(0,0).getX()<getWell(1,0).getX()) Yreversed = true;
+		if(getWell(0,0).getY()>getWell(1,0).getY()) Yreversed = true;
 	}    
 
 	public void updateWellDilutionAndVolume() {

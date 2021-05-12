@@ -525,7 +525,7 @@ public class SetExperimentSettings extends JDialog implements ActionListener {
 					settings.setFileName(p[0]);
 				}
 			}				
-			//quit design setting interface  : saving will be performed by DountDrops			
+			//quit design setting interface  : saving will be performed by CountDrops			
 			setVisible(false);
 			return;
 		}

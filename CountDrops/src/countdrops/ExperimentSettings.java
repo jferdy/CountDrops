@@ -26,7 +26,6 @@ public class ExperimentSettings {
 	private ArrayList<String> CFUDescription = new ArrayList<String>();
 	
 	public ExperimentSettings() {
-		// TODO Auto-generated constructor stub
 		NROWS = 8;
 		NCOLS = 12;
 		NFIELDS = 2;
@@ -236,7 +235,7 @@ public class ExperimentSettings {
 		}
 	}
 	
-	public void write() {
-		
-	}
+//	public void write() {
+//		
+//	}
 }

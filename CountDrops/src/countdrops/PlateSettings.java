@@ -529,14 +529,12 @@ public class PlateSettings {
 				String[] cells = content.get(line).split(";");	
 				cells[0] = cells[0].trim();
 				//System.out.println("["+cells[0]+"]");
-				if(cells[0].length()>0) {					
-					cells[0] = cells[0].toUpperCase();
-					
+				if(cells[0].length()>0) {									
 					//does first cell corresponds to a stop tag??
-					if(stopTags.contains(cells[0])) return;
+					if(stopTags.contains(cells[0].toUpperCase())) return;
 					
 					//does first cell corresponds to a tag??
-					if(tags.contains(cells[0])) tag = cells[0];										 					
+					if(tags.contains(cells[0].toUpperCase())) tag = cells[0].toUpperCase();										 					
 					//System.out.println(""+line+" : "+tag+" ("+content.get(line)+")");
 
 					if(tag.equals("NAME"))  name  = cells[1];
@@ -575,7 +573,7 @@ public class PlateSettings {
 							if(!testValue && type.equals("INTEGER")) {
 								try {
 									//tries converting value into integer
-									int test = Integer.parseInt(value);
+									//int test = Integer.parseInt(value);
 									FieldsValue.add(value);
 									testValue = true;								
 								} catch(Exception e) {
@@ -585,7 +583,7 @@ public class PlateSettings {
 							if(!testValue && type.equals("FLOAT")) {
 								try {
 									//tries converting value into double
-									double test = Double.parseDouble(value);
+									//double test = Double.parseDouble(value);
 									FieldsValue.add(value);
 									testValue = true;								
 								} catch(Exception e) {
