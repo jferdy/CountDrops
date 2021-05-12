@@ -324,6 +324,7 @@ public class SetExperimentSettings extends JDialog implements ActionListener {
 		samplePanel.add(Box.createVerticalGlue());	
 		
 		
+		
 		JPanel blablaPanel = new JPanel();
 		blablaPanel.setLayout(new BoxLayout(blablaPanel, BoxLayout.LINE_AXIS));
 		JPanel blablaPanel_left = new JPanel();
