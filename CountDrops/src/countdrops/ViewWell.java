@@ -68,7 +68,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 	private JTable summaryTable;
 	JCheckBox chkEmpty,chkIgnore, chkShowWellCountour,chkCloseWhenMoving;
 	JButton   bCpy_row,bCpy_col, bCpy_plate;
-	JSpinner  spinRadius,spinDoWand;
+	JSpinner  spinRadius,spinDoWand,spinDoWandMaxArea;
 	JRadioButton chkDoWandYes,chkDoWandNo;
 	private GraphCanvas graphicStatistics = null;
 	
@@ -94,11 +94,9 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		img = ximg;				
 		img.addListener(this);
 		img.getImageCanvas().addKeyListener(this);
-		if(evt!=null && evt.getCanvasMagnification()>1) {
-			//copy magnification from ViewWellEvent
-			img.zoom(evt.getCanvasMagnification());		
-		}
 		if(evt!=null) {
+			//copy magnification from ViewWellEvent
+			if(evt.getCanvasMagnification()>1) img.zoom(evt.getCanvasMagnification());
 			img.setSlice(evt.getSlice());
 			Xreversed = evt.isXreversed();
 			Yreversed = evt.isYreversed();			
@@ -238,7 +236,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		chkDoWandNo.addActionListener(this);
 		chkDoWandNo.setFocusable(false);
 		chkDoWandYes.setToolTipText("New CFUs will be created using \"Magic Wand\".");
-		chkDoWandNo.setToolTipText("New CFUs will be created as simple circles.");
+		chkDoWandNo.setToolTipText("New CFUs will be created as simple circles.");		
 		
 		SpinnerModel spinRadiusModel = new SpinnerNumberModel(img.getCFURadius(), //initial value
                 1, //min
@@ -247,7 +245,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		spinRadius = new JSpinner(spinRadiusModel);
 		spinRadius.setName("Circle radius");
 		spinRadius.setFocusable(false);		
-		spinRadius.setAlignmentX((float) 1.0); // right alignement	
+		spinRadius.setAlignmentX((float) 1.0); // right alignment	
 		spinRadius.addChangeListener(this);
 		//spinRadius.addKeyListener(this);
 		spinRadius.getEditor().getComponent(0).addKeyListener(this); //not great
@@ -256,7 +254,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		JLabel labSpinRadius = new JLabel("Circle radius");
 		labSpinRadius.setAlignmentX( Component.RIGHT_ALIGNMENT );//0.0
 			
-		SpinnerModel spinDoWandModel = new SpinnerNumberModel(img.getCFURadius(), //initial value
+		SpinnerModel spinDoWandModel = new SpinnerNumberModel(40, //initial value
 		1, //min
 		100, //max
 		1); 
@@ -268,7 +266,19 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		//spinDoWand.addKeyListener(this);
 		spinDoWand.getEditor().getComponent(0).addKeyListener(this);
 		spinDoWand.setToolTipText("Tolerance of Magic Wand.");
-		
+				
+		SpinnerModel spinDoWandMaxAreaModel = new SpinnerNumberModel(50, //initial value
+		10, //min
+		80, //max
+		1); 
+		spinDoWandMaxArea = new JSpinner(spinDoWandMaxAreaModel);
+		spinDoWandMaxArea.setName("Magic Wand Max Area");
+		spinDoWandMaxArea.setFocusable(false);		
+		spinDoWandMaxArea.setAlignmentX((float) 1.0);
+		spinDoWandMaxArea.addChangeListener(this);		
+		spinDoWandMaxArea.getEditor().getComponent(0).addKeyListener(this);
+		spinDoWandMaxArea.setToolTipText("Maximum proportion of total area Magic Wand can select");
+
 		JLabel labSpinDoWand = new JLabel("Magic Wand tolerance");
 		labSpinDoWand.setAlignmentX( Component.RIGHT_ALIGNMENT );//0.0
 		
@@ -277,13 +287,16 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 			chkDoWandNo.setSelected(!evt.isDoWand());
 			spinRadius.setValue(evt.getCircleRadius());
 			spinDoWand.setValue(evt.getDoWandTolerance());
+			spinDoWandMaxArea.setValue(evt.getDoWandMaxArea());
 		}
 		img.setDoWand(chkDoWandYes.isSelected());
 		if(chkDoWandYes.isSelected()) {
 			spinDoWand.setEnabled(true);
+			spinDoWandMaxArea.setEnabled(true);
 			spinRadius.setEnabled(false);
 		} else {
 			spinDoWand.setEnabled(false);
+			spinDoWandMaxArea.setEnabled(false);
 			spinRadius.setEnabled(true);
 		}
 
@@ -504,6 +517,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		doWand_no_panel.setLayout(new FlowLayout(FlowLayout.TRAILING));
 		doWand_yes_panel.add(chkDoWandYes);
 		doWand_yes_panel.add(spinDoWand);
+		doWand_yes_panel.add(spinDoWandMaxArea);
 		doWand_no_panel.add(chkDoWandNo);
 		doWand_no_panel.add(spinRadius);
 		doWand_yes_panel.setAlignmentX(Component.RIGHT_ALIGNMENT);
@@ -593,6 +607,10 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		if(name.equals(this.spinDoWand.getName())) {	
 			viewWellEvent.setDoWandTolerance(value);
 			img.setDoWandTolerance(value);
+		}
+		if(name.equals(this.spinDoWandMaxArea.getName())) {	
+			viewWellEvent.setDoWandMaxArea(value);
+			img.setDoWandMaxArea(value);
 		}
 		if(name.equals(this.spinRadius.getName())) {
 			viewWellEvent.setCircleRadius(value);
@@ -693,6 +711,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		viewWellEvent.setCloseWhenMoving(chkCloseWhenMoving.isSelected());
 		viewWellEvent.setDoWand(chkDoWandYes.isSelected());
 		viewWellEvent.setDoWandTolerance((Integer) spinDoWand.getValue());
+		viewWellEvent.setDoWandMaxArea((Integer) spinDoWandMaxArea.getValue());
 		viewWellEvent.setCircleRadius((Integer) spinRadius.getValue());
 		viewWellEvent.setShowWellContour(chkShowWellCountour.isSelected());
 		viewWellEvent.setSelectedType(summaryTable.getSelectedRow());
@@ -743,9 +762,11 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 			viewWellEvent.setDoWand(chkDoWandYes.isSelected());
 			if(chkDoWandYes.isSelected()) {
 				spinDoWand.setEnabled(true);
+				spinDoWandMaxArea.setEnabled(true);
 				spinRadius.setEnabled(false);
 			} else {
 				spinDoWand.setEnabled(false);
+				spinDoWandMaxArea.setEnabled(false);
 				spinRadius.setEnabled(true);
 			}
 		}

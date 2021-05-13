@@ -36,7 +36,7 @@ public class AutoDetect extends JDialog implements ActionListener {
 	ArrayList<ViewWellListener> listener;
 	
 	JCheckBox chkLightBackground,chkAutoSplit;	
-	JFormattedTextField fieldContrastEnhance,fieldGBlurSigma,fieldMinSize,fieldMinCirc;
+	JFormattedTextField fieldContrastEnhance,fieldGBlurSigma,fieldMinSize,fieldMinCirc,fieldMinThreshold;
 	JComboBox<String> comboBoxCFUtype;
 	
 	//default parameters for CFU detection
@@ -46,6 +46,7 @@ public class AutoDetect extends JDialog implements ActionListener {
 	private double   minCirc = 0.2;
 	private double   enhanceContrast = 0.3;
 	private double   gBlurSigma = 1.0;
+	private double   minThreshold = 0.1;
 	private String   defaultCFUtype = "NA";
 
 	public AutoDetect(ImageWell i,ViewWellEvent e,ArrayList<ViewWellListener> l) {
@@ -110,6 +111,12 @@ public class AutoDetect extends JDialog implements ActionListener {
 		fieldGBlurSigma.setValue(gBlurSigma);
 		gbcL.gridx=1; gbcL.gridy++; left_p.add(new JLabel("Gaussian blur sigma"),gbcL);
 		gbcL.gridx=1; gbcL.gridy++; left_p.add(fieldGBlurSigma,gbcL);
+
+		fieldMinThreshold = new JFormattedTextField(formatDouble);
+		fieldMinThreshold.setColumns(20);
+		fieldMinThreshold.setValue(minThreshold);
+		gbcL.gridx=1; gbcL.gridy++; left_p.add(new JLabel("Minimum threshold"),gbcL);
+		gbcL.gridx=1; gbcL.gridy++; left_p.add(fieldMinThreshold,gbcL);
 
 		fieldMinSize = new JFormattedTextField(formatInteger);
 		fieldMinSize.setColumns(20);
@@ -193,6 +200,7 @@ public class AutoDetect extends JDialog implements ActionListener {
 		lightBackground = chkLightBackground.isSelected();
 		gBlurSigma = Double.parseDouble(fieldGBlurSigma.getValue().toString());
 		enhanceContrast = Double.parseDouble(fieldContrastEnhance.getValue().toString());
+		minThreshold    = Double.parseDouble(fieldMinThreshold.getValue().toString()); 			
 		minCirc    = Double.parseDouble(fieldMinCirc.getValue().toString()); 				
 		minSize    = Integer.parseInt(fieldMinSize.getValue().toString());
 	}
@@ -202,6 +210,7 @@ public class AutoDetect extends JDialog implements ActionListener {
 		chkLightBackground.setSelected(lightBackground);
 		fieldGBlurSigma.setValue(gBlurSigma);
 		fieldContrastEnhance.setValue(enhanceContrast);
+		fieldMinThreshold.setValue(minThreshold);
 		fieldMinCirc.setValue(minCirc);
 		fieldMinSize.setValue(minSize);
 	}
@@ -240,7 +249,9 @@ public class AutoDetect extends JDialog implements ActionListener {
 		tags.add("MIN CIRCULARITY");  		//2
 		tags.add("ENHANCE CONTRAST"); 		//3
 		tags.add("GAUSSIAN BLUR SIGMA");    //4
-		tags.add("DEFAULT CFU TYPE");		//5
+		tags.add("MINIMUM THRESHOLD"); 		//5
+		tags.add("DEFAULT CFU TYPE");		//6
+		
 		
 		//int pos = -1;
 		for(int line = 0;line<content.size();line++) {
@@ -254,7 +265,8 @@ public class AutoDetect extends JDialog implements ActionListener {
 				if(cells[0].equals(tags.get(2))) minCirc = Double.parseDouble(cells[1]);
 				if(cells[0].equals(tags.get(3))) enhanceContrast = Double.parseDouble(cells[1]);
 				if(cells[0].equals(tags.get(4))) gBlurSigma = Double.parseDouble(cells[1]);
-				if(cells[0].equals(tags.get(5))) defaultCFUtype = cells[1];				
+				if(cells[0].equals(tags.get(5))) minThreshold = Double.parseDouble(cells[1]);				
+				if(cells[0].equals(tags.get(6))) defaultCFUtype = cells[1];
 			}
 		}
 
@@ -270,7 +282,7 @@ public class AutoDetect extends JDialog implements ActionListener {
 		
 		//pre-existing CFU should probably always been deleted before detection		
 		w.deleteAllCFU();	
-		w.detectCFU(imp.duplicate(),sl,gBlurSigma,enhanceContrast,lightBackground,minSize,minCirc,defaultCFUtype);
+		w.detectCFU(imp.duplicate(),sl,gBlurSigma,enhanceContrast,minThreshold,lightBackground,minSize,minCirc,defaultCFUtype);
 		
 		return w.getNbCFU();
 	}
@@ -353,6 +365,7 @@ public class AutoDetect extends JDialog implements ActionListener {
 				writer.println("MIN CIRCULARITY;"+minCirc);
 				writer.println("ENHANCE CONTRAST;"+enhanceContrast);
 				writer.println("GAUSSIAN BLUR SIGMA;"+gBlurSigma);
+				writer.println("MINIMUM THRESHOLD;"+minThreshold);
 				writer.println("DEFAULT CFU TYPE;"+defaultCFUtype);				
 				writer.close();
 			} catch(Exception ex) {

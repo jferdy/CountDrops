@@ -72,7 +72,8 @@ public class ImageWell {
 	
 	//doWand options to create new CFUs
 	private Boolean createCFUwithMagicWand = false;
-    private double  doWandTolerance = 10.0;
+    private double  doWandTolerance = 40.0;
+    private double  doWandMaxArea = 50.0;
     private String  doWandMode = "8-connected";    
     private boolean showWellContour = false; 
     private int     currentCFUType = -1;
@@ -204,19 +205,21 @@ public class ImageWell {
 			}
 			canvas.setCursor(Cursor.getDefaultCursor());
 
+			//the newly created CFU are selected (so that SUPPR deletes newly created CFUs)
+			selectedCFU.clear();
+			for(int i=0;i<cfu.length;i++) {
+				selectedCFU.add(well.getNbCFU()-1-i);	 
+			}
 			
-
 			if(!showAllCFU) {
 				//the whole display is updated
-				showAllCFU = true;                   //all CFU must be displayed so that user can easily follow what he is doing
-				for(int i=0;i<cfu.length;i++) {
-					selectedCFU.add(well.getNbCFU()-1-i);	 //the newly created CFU is added to selection (so that call SUPPR deletes newly created CFUs)
-				}
+				showAllCFU = true;                   //all CFU must be displayed so that user can easily follow what he is doing				
 				drawSelectedCFU();	    		
 			} else {
-				//the display does not need to be updated; the newly created CFU is drawn.
+				//the display does not need to be updated; the newly created CFU are drawn.
 				drawNewCFU(cfu.length);
 			}
+			
 			if(!isMute) {
 				//sends event to listeners
 				for (ImageWellListener hl : listeners) {
@@ -343,12 +346,15 @@ public class ImageWell {
 	}	
 	public void setCFURadius(int r) {cfuRadius = r;}
 	public void setDoWandTolerance(int t) {doWandTolerance = t;}
+	public void setDoWandMaxArea(int t) {doWandMaxArea = t;}
 	public void setDefaultCFURadius() {cfuRadius = imp.getWidth()/25;;}
 	public Boolean isMute() { return isMute;}
 	public int getNbCFU() {return well.getNbCFU();}
 	public int getNbSelectedCFU() {return selectedCFU.size();}
 	public int getCurrentCFUType() { return currentCFUType; }
 	public int getCFURadius() {return cfuRadius;}
+	public double getDoWandTolerance() {return doWandTolerance;}
+	public double getDoWandMaxArea() {return doWandMaxArea;}
 	public void addListener(ImageWellListener toAdd) {
         listeners.add(toAdd);
     }
@@ -655,6 +661,15 @@ public class ImageWell {
     		IJ.doWand(imp,x,y,doWandTolerance,doWandMode);
     		
     		if(imp.getRoi() == null) return(null);
+    		ImageStatistics statroi = imp.getRoi().getStatistics();
+    		Double imgarea = (double) (imp.getHeight() * imp.getWidth());
+    		if(100.0*statroi.area/imgarea > doWandMaxArea) {
+    				imp.deleteRoi(); //otherwise roi keeps being displayed
+    				return(null); //the roi is to big relative to image !
+                    			  //this is probably because user has clicked outside a CFU and the whole
+	                 			  //background has been selected.    				
+    		}
+    			
     		p = new ShapeRoi(imp.getRoi().getPolygon());
     		imp.deleteRoi(); //otherwise roi keeps being displayed
     		

@@ -2,6 +2,7 @@ package countdrops;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -90,15 +91,17 @@ public class Experiment {
 							}
 						}
 						if(hasImage && data.length==2) {
-							//Image is being read						
-							if(imagesFullName.contains(data[0]+data[1])) {
+							//Image is being read
+							//change relative path to absolute path							
+							String image_path = this.getPath()+data[0];
+							if(imagesFullName.contains(image_path+data[1])) {
 								//imagesFullName is used to check that the same picture is not added twice
 								errMsg.add("Image "+data[0]+data[1]+" will not be added twice!");
-								System.out.println("Image "+data[0]+data[1]+" will not be added twice!");
+								System.out.println("Image "+image_path+data[1]+" will not be added twice!");
 							} else {
 								//names are stored here for subsequent loading
 								imagesFullName.add(data[0]+data[1]);
-								imagesPath.add(new String[] {data[0],data[1]});
+								imagesPath.add(new String[] {image_path,data[1]});
 							}
 
 						}	    			
@@ -362,7 +365,7 @@ public class Experiment {
 	
 	public boolean save() {
 		if(settings==null) return false;
-		
+		System.out.print("Saving "+settings.getFileName());
 		try {
 			if(!settings.save()) return false;
 		    PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(settings.getPath()+settings.getFileName(),true)));//"UTF-8" ??
@@ -374,9 +377,13 @@ public class Experiment {
 		    		    
 		    if(pictures!=null) {
 		    	writer.println("IMAGES");	
+		    	//path of the experiment config file
+		    	String base = this.getPath();
 		    	for(int i=0;i<pictures.size();i++) {
-		    		Picture p = pictures.get(i);			
-		    		writer.println(p.getPath()+";"+p.getFileName());    				
+		    		Picture p = pictures.get(i);	
+		    		//make the image path relative to that of experiment config file
+		    		String relative_path = new File(p.getPath()).toURI().relativize(new File(base).toURI()).getPath();
+		    		writer.println(relative_path+";"+p.getFileName());    				
 		    	}    		   
 		    }
 		    writer.close();

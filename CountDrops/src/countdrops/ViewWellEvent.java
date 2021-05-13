@@ -19,8 +19,9 @@ public class ViewWellEvent extends EventObject {
     private int     slice = -1;
     private int     circleRadius = 12;
     private int     doWandTolerance = 40;
+    private int     doWandMaxArea = 50;
 	private boolean closeWhenMoving = false;
-    private boolean doWand = false;      //CheckBox create with DoWand
+    private boolean doWand = true;      //CheckBox create with DoWand
     private boolean showWellContour = false;      //CheckBox create with DoWand
     private boolean changeType = false;  //CheckBox change type on click
     private int     selectedType = 0;    //selected CFU type 
@@ -64,7 +65,9 @@ public class ViewWellEvent extends EventObject {
     public void setDoWandTolerance(int t) {
     	doWandTolerance = t;
     }
-    
+    public void setDoWandMaxArea(int m) {
+    	doWandMaxArea = m;
+    }
     public void setCircleRadius(int r) {
     	circleRadius = r;
     }
@@ -108,7 +111,9 @@ public class ViewWellEvent extends EventObject {
 	public int getDoWandTolerance()   {
 		return(doWandTolerance);	
 	}
-	
+	public int getDoWandMaxArea()   {
+		return(doWandMaxArea);	
+	}
 	public int getSelectedType() {
 		return selectedType;
 	}

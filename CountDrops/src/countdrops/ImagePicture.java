@@ -58,11 +58,11 @@ public class ImagePicture implements ViewWellListener {
 
 	private KeyListener canvasKeyListener = new KeyListener() {	
 		public void keyPressed(KeyEvent evt) {
-			System.out.println("Vlan");
+			//System.out.println("Vlan");
 
 			boolean CTRLpressed=false;
 			boolean ALTpressed=false;
-			boolean SHIFTpressed=false;
+			//boolean SHIFTpressed=false;
 
 			if(evt.isControlDown()) {
 				CTRLpressed = true;
@@ -70,9 +70,9 @@ public class ImagePicture implements ViewWellListener {
 			if(evt.isAltDown()) {
 				ALTpressed = true;
 			}
-			if(evt.isShiftDown()) {
-				SHIFTpressed = true;
-			}
+//			if(evt.isShiftDown()) {
+//				SHIFTpressed = true;
+//			}
 
 
 			switch (evt.getKeyCode()) {
@@ -84,7 +84,7 @@ public class ImagePicture implements ViewWellListener {
 			case KeyEvent.VK_UP:
 			case KeyEvent.VK_KP_UP:
 				if (ALTpressed && !CTRLpressed) {		
-					System.out.println("In");
+					//System.out.println("In");
 					zoomIn();
 				}
 				break;
@@ -729,14 +729,18 @@ public class ImagePicture implements ViewWellListener {
 
 		double newMag = canvas.getMagnification()*scale;
 		if(newMag<0 || newMag>32) return;
-		
-		//int x = (int) ((selectedPlate.getBoxX(1)+selectedPlate.getBoxX(0))/2.0);
-		//int y = (int) ((selectedPlate.getBoxY(1)+selectedPlate.getBoxY(0))/2.0);
 
-		int x = selectedPlate.getBoxX(0);
-		int y = selectedPlate.getBoxY(0);
 		int w = (int)Math.round(imp.getWidth()*newMag);
 		int h = (int)Math.round(imp.getHeight()*newMag);
+
+		int x,y;
+		if(selectedPlate!=null) {
+			x = selectedPlate.getBoxX(0);
+			y = selectedPlate.getBoxY(0);
+		} else {
+			x = w/2;
+			y = h/2;
+		}
 		
 		Dimension newSize = new Dimension(w,h);	 			
 		canvas.setMagnification(newMag);
