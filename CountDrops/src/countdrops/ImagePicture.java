@@ -623,9 +623,14 @@ public class ImagePicture implements ViewWellListener {
 				for(int row=0;row<selectedPlate.getNROWS();row++) {
 					Well w2 = selectedPlate.getWell(row,col);
 					publish("Looking for CFUs in well "+w2.getName());
-					if(w1==w2 || !w2.isLocked()) {
-						ad.apply(w2.getImagePlus(getImagePlus()),w2,slice);
+					if(w1==w2) {
+						ad.apply(w1.getImagePlus(getImagePlus()),w1,slice);											
 						cmpt++;
+					} else { 
+						if(!w2.isLocked()) {
+							ad.apply(w2.getImagePlus(getImagePlus()),w2,slice);
+							cmpt++;
+						}
 					}
 					setProgress(row+1);
 					Thread.sleep(100);
@@ -647,6 +652,7 @@ public class ImagePicture implements ViewWellListener {
 					if(pgDlg!=null) pgDlg.setVisible(false);
 					CountDrops.setDefaultCursor(ad);
 					CountDrops.setEnableComponents(ad,true);
+					
 				}
 			}   
 

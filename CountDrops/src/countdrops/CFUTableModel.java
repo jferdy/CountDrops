@@ -245,21 +245,16 @@ class CFUTableRowListener  implements ListSelectionListener{
 		img.setIsMute(true);
 		img.deselectAllCFU();
 		
-		if (lsm.isSelectionEmpty())  {
-			//unselected and redraw			
-			img.drawSelectedCFU();
-			img.setIsMute(false);
-			return;		
+		if (! lsm.isSelectionEmpty())  {					
+			for(int i=0;i<img.getWell().getNbCFU();i++) {
+				if(lsm.isSelectedIndex(i)) {
+					//convert row position in table (which may have been sorted) to position in data
+					int j =  tab.convertRowIndexToModel(i); 
+					img.selectCFU(j);	
+				}
+			}		
 		}
-					
-		for(int i=0;i<img.getWell().getNbCFU();i++) {
-			if(lsm.isSelectedIndex(i)) {
-				//convert row position in table (which may have been sorted) to position in data
-				int j =  tab.convertRowIndexToModel(i); 
-				img.selectCFU(j);	
-			}
-		}		
-		img.drawSelectedCFU();
+		img.drawCFU();
 		img.setIsMute(false);
 	}
 	

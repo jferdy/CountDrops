@@ -773,7 +773,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		
 		if (action == "SHOWWELLCONTOUR") {			
 			img.setShowWellContour(chkShowWellCountour.isSelected());
-			img.drawSelectedCFU();
+			img.drawCFU();
 		}
 		
 		if (action == "MOVELEFT" || action == "MOVERIGHT" || action == "MOVEUP" || action == "MOVEDOWN") {
@@ -793,7 +793,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 			AutoDetect a = new AutoDetect(img,viewWellEvent,listViewWellListener);
 			a.setLocationRelativeTo(this);
 			a.setVisible(true);
-			cfuTable.requestFocus();			
+			cfuTable.requestFocus();				
 		}
 
 		if(action == "VIEWCOMMENTS") {
@@ -873,7 +873,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 				if (!CTRLpressed && !SHIFTpressed) {
 					// display / hide all CFUs
 					img.setShowAllCFU(!img.isShowAllCFU());
-					img.drawSelectedCFU();
+					img.drawCFU();
 					//prevent JTable to react to that key!
 					evt.consume();
 				}
@@ -959,7 +959,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 					// select all CFU
 					// useful if cfuTable has lost focus...
 					img.selectAllCFU();
-					img.drawSelectedCFU();
+					img.drawCFU();
 				}
 			}
 			if (CTRLpressed && SHIFTpressed) {

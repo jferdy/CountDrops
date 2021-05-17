@@ -119,10 +119,11 @@ public class ImageWell {
 			if(mouseDragged) {
 				//mouse has been dragged: select all CFUs inside rectangle		    	
 				selectCFU(getDraggedRoi(evt));
+				showAllCFU = false;
 				mouseDragged = false;
 					
 				overlay.clear();
-				drawSelectedCFU();					
+				drawCFU();					
 				return;				
 			} 
 
@@ -168,7 +169,6 @@ public class ImageWell {
 					CFU cfu = well.getCFU(index);
 					if(!cfu.isSaved()) return; //cfu cannot be edited if saving is still in process
 					splitCFU(cfu); 
-					drawSelectedCFU();
 					return;
 				}
 
@@ -181,14 +181,16 @@ public class ImageWell {
 						//the clicked CFU is already selected: it is now unselected
 						deselectCFU(index);    				
 					}
-					drawSelectedCFU();
+					showAllCFU = false;
+					drawCFU();
 					return;
 				}
 
 				//default : the clicked CFU is selected in place of all previously selected CFUs	 	    		
 				deselectAllCFU();
 				selectCFU(index);
-				drawSelectedCFU();
+				showAllCFU = false;
+				drawCFU();
 				return;
 			} 
 
@@ -214,7 +216,7 @@ public class ImageWell {
 			if(!showAllCFU) {
 				//the whole display is updated
 				showAllCFU = true;                   //all CFU must be displayed so that user can easily follow what he is doing				
-				drawSelectedCFU();	    		
+				drawCFU();	    		
 			} else {
 				//the display does not need to be updated; the newly created CFU are drawn.
 				drawNewCFU(cfu.length);
@@ -250,7 +252,8 @@ public class ImageWell {
 		    if(mouseDragged) { 		    	
 		    	//mouseDragged = true;		    	
 		    	selectCFU(roi);
-		    	drawSelectedCFU();	
+		    	showAllCFU = false;
+		    	drawCFU();	
 		    	roi.setStrokeColor(Color.white);
 		    	overlay.add(roi);
 		    	imp.updateAndDraw();
@@ -432,7 +435,7 @@ public class ImageWell {
     	overlay.clear();
 		if(showWellContour) {    
 			well.draw(canvas);
-    	}
+    	}		
 		canvas.repaint();
 		imp.updateAndRepaintWindow();
     }
@@ -447,28 +450,23 @@ public class ImageWell {
 		imp.updateAndRepaintWindow();		
 	}
     
-	public void drawSelectedCFU() {						
-		if(showAllCFU) {
-			//all CFU are displayed
-			drawCFU();
-			return;
-		}		
-		//only selected CFU are displayed		
-		drawWellContour();
-		for(int i=0;i<selectedCFU.size();i++) {
-			CFU cfu = well.getCFU(selectedCFU.get(i)); 
-			cfu.draw(canvas);
-		}
-		canvas.repaint();
-		imp.updateAndRepaintWindow();		
-	}
 	
 	public void drawCFU() {
+		//all CFUs are displayed
 		drawWellContour();
-    	for(int i=0;i<well.getNbCFU();i++) {
-    		CFU cfu = well.getCFU(i);
-    		cfu.draw(canvas);    		
-    		}
+		if(showAllCFU) {
+			//display all CFUs
+	    	for(int i=0;i<well.getNbCFU();i++) {
+	    		CFU cfu = well.getCFU(i);
+	    		cfu.draw(canvas);    		
+	    		}
+		} else {
+			//display only selected CFUs
+			for(int i=0;i<selectedCFU.size();i++) {
+				CFU cfu = well.getCFU(selectedCFU.get(i)); 
+				cfu.draw(canvas);
+			}
+		}
     	canvas.repaint();
     	imp.updateAndRepaintWindow();    	
 	}
@@ -486,7 +484,7 @@ public class ImageWell {
 		
 		canvas.setMagnification(newMag);
 		canvas.setSize(newSize);			
-		drawSelectedCFU();
+		drawCFU();
 	}
 
 	public void zoomIn() {
@@ -723,10 +721,12 @@ public class ImageWell {
 		if(!cfu.isSaved()) return false;
 		
 		int nb = well.splitCFU(cfu);				
-						
+		boolean oldShowAllCFU = showAllCFU;
+		
 		this.deselectAllCFU();
-		for(int i=0;i<nb;i++) selectedCFU.add(well.getNbCFU()-1-i);	 //the newly created CFUs are selected   			    		  
-		drawSelectedCFU();	    		
+		for(int i=0;i<nb;i++) selectedCFU.add(well.getNbCFU()-1-i);	 //the newly created CFUs are selected
+		showAllCFU = oldShowAllCFU;
+		drawCFU();		
 		if(!isMute) {
 			//sends event to listeners
 			for (ImageWellListener hl : listeners) {
@@ -751,7 +751,7 @@ public class ImageWell {
     public void deleteAllCFU() {
     	well.deleteAllCFU();
     	selectedCFU.clear();
-    	drawSelectedCFU();
+    	drawCFU();
     	
     	if(!isMute) {
     		for (ImageWellListener hl : listeners) hl.CFUremoved();
@@ -762,7 +762,7 @@ public class ImageWell {
     public void changeTypeForSelectedCFU(String key) {
     	Boolean changed = well.changeCFUType(key,selectedCFU);
     	if(changed) {
-    		drawSelectedCFU();
+    		drawCFU();
     		if(!isMute) {
     			for (ImageWellListener hl : listeners) hl.CFUedited();
     		}
@@ -771,7 +771,7 @@ public class ImageWell {
     public void unsetTypeForSelectedCFU() {
     	Boolean changed = well.unsetCFUType(selectedCFU);
     	if(changed) {
-    		drawSelectedCFU();
+    		drawCFU();
     		if(!isMute) {
     			for (ImageWellListener hl : listeners) hl.CFUedited();
     		}

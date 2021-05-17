@@ -23,30 +23,34 @@ import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import ij.ImagePlus;
 
 
-public class AutoDetect extends JDialog implements ActionListener {
+public class AutoDetect extends JDialog implements ActionListener, ChangeListener {
 	private static final long serialVersionUID = 1L;
 	
 	ImageWell img;
 	ViewWellEvent viewWellEvent;
 	ArrayList<ViewWellListener> listener;
 	
-	JCheckBox chkLightBackground,chkAutoSplit;	
-	JFormattedTextField fieldContrastEnhance,fieldGBlurSigma,fieldMinSize,fieldMinCirc,fieldMinThreshold;
+	JCheckBox chkLightBackground,chkFixedThreshold;//,chkAutoSplit;	
+	JFormattedTextField fieldContrastEnhance,fieldGBlurSigma,fieldMinSize,fieldMinCirc,fieldMinThreshold,fieldThreshold;
 	JComboBox<String> comboBoxCFUtype;
 	
 	//default parameters for CFU detection
 	private int      slice = -1;	
-	private boolean  lightBackground = true;
+	private boolean  lightBackground = false;
 	private int      minSize = 20;
 	private double   minCirc = 0.2;
 	private double   enhanceContrast = 0.3;
 	private double   gBlurSigma = 1.0;
+	private boolean  fixedThreshold = true;
 	private double   minThreshold = 0.1;
+	private double   threshold = 127.5;
 	private String   defaultCFUtype = "NA";
 
 	public AutoDetect(ImageWell i,ViewWellEvent e,ArrayList<ViewWellListener> l) {
@@ -112,9 +116,22 @@ public class AutoDetect extends JDialog implements ActionListener {
 		gbcL.gridx=1; gbcL.gridy++; left_p.add(new JLabel("Gaussian blur sigma"),gbcL);
 		gbcL.gridx=1; gbcL.gridy++; left_p.add(fieldGBlurSigma,gbcL);
 
+		chkFixedThreshold = new JCheckBox("Fixed threshold");
+		chkFixedThreshold.setSelected(fixedThreshold);
+		chkFixedThreshold.addChangeListener(this);
+		gbcL.gridx=1; gbcL.gridy++; left_p.add(chkFixedThreshold,gbcL);
+
+		fieldThreshold = new JFormattedTextField(formatDouble);
+		fieldThreshold.setColumns(20);
+		fieldThreshold.setValue(threshold);
+		fieldThreshold.setEnabled(true);
+		gbcL.gridx=1; gbcL.gridy++; left_p.add(new JLabel("Threshold"),gbcL);
+		gbcL.gridx=1; gbcL.gridy++; left_p.add(fieldThreshold,gbcL);
+
 		fieldMinThreshold = new JFormattedTextField(formatDouble);
 		fieldMinThreshold.setColumns(20);
 		fieldMinThreshold.setValue(minThreshold);
+		fieldMinThreshold.setEnabled(false);
 		gbcL.gridx=1; gbcL.gridy++; left_p.add(new JLabel("Minimum threshold"),gbcL);
 		gbcL.gridx=1; gbcL.gridy++; left_p.add(fieldMinThreshold,gbcL);
 
@@ -183,15 +200,7 @@ public class AutoDetect extends JDialog implements ActionListener {
 		p.add(left_p);
 		p.add(right_p);
 		add(p);
-		
-		
-//		if(e!=null) {			
-//			setLocation(e.getLocation());
-//			//TODO does not seem to work... dialog is not on the same screen than ViewWell when not on default screen
-//		} else {
-//			setLocationRelativeTo(null);
-//		}
-		
+				
 		pack();		
 	}
 
@@ -249,8 +258,10 @@ public class AutoDetect extends JDialog implements ActionListener {
 		tags.add("MIN CIRCULARITY");  		//2
 		tags.add("ENHANCE CONTRAST"); 		//3
 		tags.add("GAUSSIAN BLUR SIGMA");    //4
-		tags.add("MINIMUM THRESHOLD"); 		//5
-		tags.add("DEFAULT CFU TYPE");		//6
+		tags.add("FIXED THRESHOLD"); 		//5
+		tags.add("MINIMUM THRESHOLD"); 		//6
+		tags.add("THRESHOLD"); 				//7
+		tags.add("DEFAULT CFU TYPE");		//8
 		
 		
 		//int pos = -1;
@@ -265,8 +276,10 @@ public class AutoDetect extends JDialog implements ActionListener {
 				if(cells[0].equals(tags.get(2))) minCirc = Double.parseDouble(cells[1]);
 				if(cells[0].equals(tags.get(3))) enhanceContrast = Double.parseDouble(cells[1]);
 				if(cells[0].equals(tags.get(4))) gBlurSigma = Double.parseDouble(cells[1]);
-				if(cells[0].equals(tags.get(5))) minThreshold = Double.parseDouble(cells[1]);				
-				if(cells[0].equals(tags.get(6))) defaultCFUtype = cells[1];
+				if(cells[0].equals(tags.get(7))) threshold = Double.parseDouble(cells[1]);
+				if(cells[0].equals(tags.get(6))) minThreshold = Double.parseDouble(cells[1]);
+				if(cells[0].equals(tags.get(5))) fixedThreshold = cells[1].equals("true");
+				if(cells[0].equals(tags.get(8))) defaultCFUtype = cells[1];
 			}
 		}
 
@@ -280,10 +293,10 @@ public class AutoDetect extends JDialog implements ActionListener {
 	public int apply(ImagePlus imp,Well w,int sl) {
 		//TODO apply to current slice, not default slice so that when autodetect is applied to plate, the same slice is always analyzed.
 		
-		//pre-existing CFU should probably always been deleted before detection		
+		//pre-existing CFUs are deleted before detection		
 		w.deleteAllCFU();	
-		w.detectCFU(imp.duplicate(),sl,gBlurSigma,enhanceContrast,minThreshold,lightBackground,minSize,minCirc,defaultCFUtype);
-		
+		if(!chkFixedThreshold.isSelected()) threshold = -1.0;
+		w.detectCFU(imp.duplicate(),sl,gBlurSigma,enhanceContrast,threshold,minThreshold,lightBackground,minSize,minCirc,defaultCFUtype);		
 		return w.getNbCFU();
 	}
 	
@@ -297,6 +310,8 @@ public class AutoDetect extends JDialog implements ActionListener {
 			int pos = apply(img.getImagePlus(),img.getWell());
 			for(int i=pos;i<img.getWell().getNbCFU();i++) img.selectCFU(i);
 			
+			img.setShowAllCFU(true);
+			img.setShowWellContour(true);
 			img.drawCFU();			
 			for (ImageWellListener hl : img.getListeners()) {
 				hl.CFUremoved();
@@ -315,13 +330,16 @@ public class AutoDetect extends JDialog implements ActionListener {
 				if(cmd.equals("APPLYCOLUMN")) l.autoDetectColumn(viewWellEvent);
 				if(cmd.equals("APPLYPLATE"))  l.autoDetectPlate(viewWellEvent);
 			}
-			//wait until autoDetect is done								
+			//wait until autoDetect is done											
+			img.setShowAllCFU(true);
+			img.setShowWellContour(true);
 			img.drawCFU();			
 			for (ImageWellListener hl : img.getListeners()) {				
 				hl.CFUadded();				
 				hl.CFUedited();
+				hl.CFUremoved();
 				hl.SelectionHasChanged();
-			}			
+			}
 			return;
 		}
 		
@@ -365,6 +383,12 @@ public class AutoDetect extends JDialog implements ActionListener {
 				writer.println("MIN CIRCULARITY;"+minCirc);
 				writer.println("ENHANCE CONTRAST;"+enhanceContrast);
 				writer.println("GAUSSIAN BLUR SIGMA;"+gBlurSigma);
+				if(fixedThreshold) {
+					writer.println("FIXED THRESHOLD;true");
+				} else {
+					writer.println("FIXED THRESHOLD;false");
+				}
+				writer.println("THRESHOLD;"+threshold);
 				writer.println("MINIMUM THRESHOLD;"+minThreshold);
 				writer.println("DEFAULT CFU TYPE;"+defaultCFUtype);				
 				writer.close();
@@ -374,6 +398,17 @@ public class AutoDetect extends JDialog implements ActionListener {
 			return;
 		}
 
+	}
+
+	@Override
+	public void stateChanged(ChangeEvent e) {
+		if(chkFixedThreshold.isSelected()) {
+			fieldMinThreshold.setEnabled(false);
+			fieldThreshold.setEnabled(true);
+		} else {
+			fieldMinThreshold.setEnabled(true);
+			fieldThreshold.setEnabled(false);
+		}		
 	}
 
 }

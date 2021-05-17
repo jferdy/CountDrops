@@ -1040,7 +1040,7 @@ public class Well {
 		return(impCpy);		
 	}
 		
-	public int detectCFU(ImagePlus imp,int slice,double gBlurSigma,double enhanceContrast,double minThreshold,boolean lightBackground,int minSize,double minCirc,String defaultCFUtype) {
+	public int detectCFU(ImagePlus imp,int slice,double gBlurSigma,double enhanceContrast,double threshold,double minThreshold,boolean lightBackground,int minSize,double minCirc,String defaultCFUtype) {
 		ImagePlus impCpy = new ImagePlus("",imp.getStack().getProcessor(slice));		
 		
 		//convert to graylevel
@@ -1052,14 +1052,12 @@ public class Well {
 			ContrastEnhancer enh = new ContrastEnhancer();
 			enh.stretchHistogram(impCpy, enhanceContrast);			                                            
 		}
-		//impCpy.show(); if(true) return(0);
 		
 		//add gaussian blur
 		if(gBlurSigma>0) {
 			GaussianBlur gb = new GaussianBlur();
 			gb.blurGaussian(impCpy.getProcessor(), gBlurSigma);
-		}
-		
+		}		
 		
 		// set threshold using default autothreshold
 		// the CFU should eventually turned to white on a black background
@@ -1067,16 +1065,18 @@ public class Well {
 		// (or very high depending on the background) and false positives are generated 
 		// autoThreshold is considered meaningful when above 10 and below 245
 	    impCpy.getProcessor().setAutoThreshold(AutoThresholder.Method.Default,!lightBackground);
-	    double threshold = impCpy.getProcessor().getAutoThreshold();
-//	    threshold = minThreshold;
-//	    System.out.print("Threshold: "+threshold+"\n");
-	    if(threshold<=255*minThreshold || threshold>=255*(1.0-minThreshold)) return(0);	
+	    if(threshold<0) {
+	    	threshold = impCpy.getProcessor().getAutoThreshold();
+	    	if(threshold<=255*minThreshold || threshold>=255*(1.0-minThreshold)) return(0);
+	    }
+	    	
 	    
 	    if(lightBackground) {
 	    	impCpy.getProcessor().setThreshold(0.0, threshold, ImageProcessor.NO_LUT_UPDATE);	
 	    } else {
 	    	impCpy.getProcessor().setThreshold(threshold, 255.0, ImageProcessor.NO_LUT_UPDATE);	
 	    }	    	   
+	    
 	    
 	    //impCpy.getProcessor().autoThreshold();	    
 	    ByteProcessor mask = impCpy.getProcessor().createMask();
@@ -1121,7 +1121,6 @@ public class Well {
 		
 		if(vroi==null || vroi.length<=0) return(0); //nothing has been detected
 		
-		CFU[] newcfu = new CFU[vroi.length];
 		for(int i=0;i<vroi.length;i++) {
 			//create new CFU
 			Polygon p = vroi[i].getPolygon();			
