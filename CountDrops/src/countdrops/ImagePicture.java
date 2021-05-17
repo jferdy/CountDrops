@@ -335,7 +335,7 @@ public class ImagePicture implements ViewWellListener {
 			}		    		    		    
 		}
 		if(!w.isLocked()) {
-			SampleStatistics stat = gui.getStatistics(w);
+			SampleStatistics stat = gui.getStatistics(w); //sampleStatistics will be copied when the graphic is created			
 			
 			ImageWell iw = new ImageWell(imp,selectedPlate,w);
 			
@@ -352,46 +352,16 @@ public class ImagePicture implements ViewWellListener {
 			  
 			  evt = new ViewWellEvent(w,loc);
 			  evt.setScreen(device);
-			}
-			  
-			
+			}			  
 			evt.setXreversed(selectedPlate.isXreversed());
 			evt.setYreversed(selectedPlate.isYreversed());
 				
-//			GraphicsDevice device; 			
-//			if(openedViewWell.size()>0) {
-//				//vw on the same screen than the last opened ViewWell
-//				device = openedViewWell.get(openedViewWell.size()-1).getGraphicsConfiguration().getDevice();
-//			} else {			
-//				//vw on the same screen than plate image
-//				device = this.getImageWindow().getGraphicsConfiguration().getDevice(); 
-//			}
-//			evt.setScreen(device);
-			
 			
 			ViewWell  vw = new ViewWell(iw,evt,stat);
 			
 			vw.addListener(this); //ImagePicture listens to ViewWell
 			vw.addListener(gui);  //main gui also listens to adjust ExperimentTree to changes in CFU number
-			
-			
-			/*
-			 * GraphicsDevice device; if(openedViewWell.size()>0) { //vw on the same screen
-			 * than the last opened ViewWell device =
-			 * openedViewWell.get(openedViewWell.size()-1).getGraphicsConfiguration().
-			 * getDevice(); } else { //vw on the same screen than plate image device =
-			 * this.getImageWindow().getGraphicsConfiguration().getDevice(); }
-			 * //device.setFullScreenWindow( vw );
-			 * 
-			 * //move vw to the right screen int width =
-			 * device.getDefaultConfiguration().getBounds().width; int height =
-			 * device.getDefaultConfiguration().getBounds().height; vw.setLocation( ((width
-			 * / 2) - (vw.getSize().width / 2)) +
-			 * device.getDefaultConfiguration().getBounds().x, ((height / 2) -
-			 * (vw.getSize().height / 2)) + device.getDefaultConfiguration().getBounds().y
-			 * );
-			 */	        
-			
+						
 			openedWell.add(w);
 			openedViewWell.add(vw);
 
@@ -424,14 +394,7 @@ public class ImagePicture implements ViewWellListener {
 		Well w = evt.getWell();
 		Point loc = new Point(evt.getX(),evt.getY());
 		//System.out.print(loc.getX()+" "+loc.getY()+" -> ");
-		
-//		boolean closeWhenMoving = evt.isCloseWhenMoving();
-//		boolean doWand = evt.isDoWand();
-//		boolean changeType = evt.isChangeType();
-//		int selectedType = evt.getSelectedType();
-//		double mag = evt.getCanvasMagnification();
-//		Dimension windowSize = evt.getWindowSize();
-		
+				
 		if(openedWell.contains(w)) {
 			//opens a new ViewWell instance only if the clicked well belongs to selectedPlate !
 			int row = w.getRowInPlate();
@@ -587,7 +550,7 @@ public class ImagePicture implements ViewWellListener {
 				if(SwingUtilities.isEventDispatchThread()) {											
 					if(pgDlg!=null) pgDlg.setVisible(false);
 					CountDrops.setDefaultCursor(ad);
-					CountDrops.setEnableComponents(ad,true);
+					CountDrops.setEnableComponents(ad,true);					
 				}
 			}   
 
@@ -633,8 +596,8 @@ public class ImagePicture implements ViewWellListener {
 						}
 					}
 					setProgress(row+1);
-					Thread.sleep(100);
-				}
+					//Thread.sleep(100);									
+				}				
 				return cmpt;
 			}
 			@Override

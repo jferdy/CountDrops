@@ -98,30 +98,11 @@ public class SummaryTableModel extends AbstractTableModel {
 		}
 		
 		//update statistics in graphics
-		updateStatistics();
+		statisticsGraphics.updateCounts(img.getWell());
 		
 		for(ViewWellListener l : listViewWellListener) l.viewWellChange(viewWellEvent);
 		w.write();		
 		fireTableDataChanged();					
-	}
-
-	private void updateStatistics() {
-		//System.out.print("update statistics :");
-		//update statistics in graphics !
-		int nbRow = img.getWell().getNCFUTYPES()+1;
-
-		int x[] = new int[nbRow];
-		for(int i=0;i<nbRow;i++) {
-			if((boolean) (data[i][3])) {
-				x[i]=-1;
-			} else {
-				x[i] = (int) (data[i][2]);
-				//System.out.print(" "+x[i]);		
-			}
-		}
-		//System.out.print("\n");
-		statisticsGraphics.updateCounts(x);
-		statisticsGraphics.repaint();
 	}
 	
 	public int getRowCount() {
@@ -167,7 +148,7 @@ public class SummaryTableModel extends AbstractTableModel {
         for(ViewWellListener l : listViewWellListener) l.viewWellChange(viewWellEvent);
         img.getWell().write();
         
-        updateStatistics();
+        statisticsGraphics.updateCounts(img.getWell());
         fireTableCellUpdated(row, col);        
     }
 	
@@ -215,9 +196,10 @@ class SummaryTableRowListener  implements ListSelectionListener{
 		statisticsGraphics = gr;
 	}
 	
+
 	public void valueChanged(ListSelectionEvent e){
 		if (e.getValueIsAdjusting()) return;
-					
+											
 		ListSelectionModel lsm = (ListSelectionModel)e.getSource();
 		
 		//get selected line
@@ -226,11 +208,10 @@ class SummaryTableRowListener  implements ListSelectionListener{
 		//sets default type in img
 		if(i<0 || i>img.getWell().getNCFUTYPES()) return;
 		img.setCurrentCFUType(i-1);
-		
-		
-
+				
 		//sets displayed type in graphics
 		if(statisticsGraphics != null) {		
+			statisticsGraphics.updateCounts(img.getWell());
 			statisticsGraphics.setCFUtype(i);										
 			statisticsGraphics.repaint();
 		}

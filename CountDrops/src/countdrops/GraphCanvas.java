@@ -1,7 +1,6 @@
 package countdrops;
 
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -13,9 +12,11 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.BevelBorder;
 
-public class GraphCanvas extends JPanel implements MouseMotionListener {			
-        private SampleStatistics statistics = null;
-        private int CFUtype = -1;
+public class GraphCanvas extends JPanel implements MouseMotionListener {			      
+		private static final long serialVersionUID = 1336326822937286575L;
+		
+		private SampleStatistics statistics = null;
+		private int CFUtype = -1;
         
         private int pointRadius = 10;
         
@@ -39,7 +40,8 @@ public class GraphCanvas extends JPanel implements MouseMotionListener {
         
         public GraphCanvas(SampleStatistics st) {
             super();
-            statistics = st;
+            
+            statistics = new SampleStatistics(st);
                         
             ptX = new int[statistics.getNBcounts()];
             ptY = new int[statistics.getNBcounts()];
@@ -57,6 +59,10 @@ public class GraphCanvas extends JPanel implements MouseMotionListener {
         public void setLogScaleX(boolean b) {logScaleX=b;}
         public void setLogScaleY(boolean b) {logScaleY=b;}
         
+        public String getID() {
+        	return statistics.getID();	
+        }
+
         public int  getCFUtype() {return CFUtype;}        
         public void setCFUtype(int i) {
         	if(i<0 || i>statistics.getNbCFUtype()+1) return;
@@ -64,7 +70,13 @@ public class GraphCanvas extends JPanel implements MouseMotionListener {
         	}
         
         public void updateCounts(int[] x) {
-    		statistics.updateCounts(x);		
+    		statistics.updateCounts(x);
+    		repaint();
+    	}
+        
+        public void updateCounts(Well w) {
+    		statistics.updateCounts(w);	
+    		repaint();
     	}
         
         public void updateMinMaxX() {
@@ -146,7 +158,7 @@ public class GraphCanvas extends JPanel implements MouseMotionListener {
             if(CFUtype<0) return;
             updateMinMaxY();
             
-            //draw points
+            //draw points ***************************************************
             Color bgColor = Color.WHITE;
             if(CFUtype>0) {
             	bgColor = statistics.getCFUColor(CFUtype-1);
@@ -213,20 +225,20 @@ public class GraphCanvas extends JPanel implements MouseMotionListener {
             		}
             	}
             }
+            //************************************************************************
             
             //draws ticks and tick labels on x scale
             int y = pointRadius + grHeight;
             for(int i = 0; i < statistics.getNbUniqueDilutionValues(); i++) {
-            	double z = -1.0;
+            	double z = statistics.getUniqueDilutionValue(i);
             	if(logScaleX) {
             		z = Math.log10(statistics.getUniqueDilutionValue(i));
-            	} else {
-            		z = statistics.getUniqueDilutionValue(i);
             	}
             	int x = 4*htext + (int) (grWidth*(z-minX)*scaleX + 0.5);            	
             	g.drawLine(x,y,x,y+5);
-            	str = ""+z;
+            	str = ""+statistics.getUniqueDilutionValue(i);
             	g.drawString(str,x-metrics.stringWidth(str)/2,y+htext);
+            	//System.out.print(x+" "+y+" "+str);
             }
             
           //draws ticks and tick labels on y scale            

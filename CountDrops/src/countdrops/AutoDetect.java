@@ -330,7 +330,9 @@ public class AutoDetect extends JDialog implements ActionListener, ChangeListene
 				if(cmd.equals("APPLYCOLUMN")) l.autoDetectColumn(viewWellEvent);
 				if(cmd.equals("APPLYPLATE"))  l.autoDetectPlate(viewWellEvent);
 			}
-			//wait until autoDetect is done											
+			
+			//TODO wait until autoDetect is done ?
+			
 			img.setShowAllCFU(true);
 			img.setShowWellContour(true);
 			img.drawCFU();			

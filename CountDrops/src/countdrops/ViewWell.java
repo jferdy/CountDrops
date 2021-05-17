@@ -70,7 +70,9 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 	JButton   bCpy_row,bCpy_col, bCpy_plate;
 	JSpinner  spinRadius,spinDoWand,spinDoWandMaxArea;
 	JRadioButton chkDoWandYes,chkDoWandNo;
+	
 	private GraphCanvas graphicStatistics = null;
+	//private SampleStatistics statistics = null;
 	
 	// key pressed and other flags
 	// private KeyStrokeAction keyStrokeAction;
@@ -80,7 +82,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 	private boolean Xreversed = false;
 	private boolean Yreversed = false;
 
-	public ViewWell(ImageWell ximg,ViewWellEvent evt,SampleStatistics stat) { 
+	public ViewWell(ImageWell ximg,ViewWellEvent evt,SampleStatistics s) { 
 		super();
 		
 		this.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);			
@@ -110,6 +112,9 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		}		
 		viewWellEvent = new ViewWellEvent(img.getWell(),this.getLocation());
 		comments = img.getWell().getComments();	
+		
+
+		graphicStatistics = new GraphCanvas(s); 		//will be added in right panel
 		
 		setResizable(true);		
 		this.setUndecorated(false); //for some reason the cross button to close dialog does not show up...		
@@ -166,9 +171,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		chkIgnore.setSelected(img.getWell().isIgnored());
 		chkIgnore.setActionCommand("IGNORE");
 		chkIgnore.addActionListener(this);
-		p_left_bottom_left.add(chkIgnore);
-		
-		graphicStatistics = new GraphCanvas(stat); 		//will be added in right panel
+		p_left_bottom_left.add(chkIgnore);			
 
 		p_left_bottom_left.add(new JLabel("Number of CFU per type"));
 		summaryTableModel = new SummaryTableModel(img, chkEmpty, graphicStatistics, listViewWellListener,viewWellEvent);
@@ -437,7 +440,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		p_navigation.add(Box.createRigidArea(new Dimension(5, 0)));
 																								
 		//the summary graphic************************
-		JLabel sampleTitle = new JLabel("Sample "+stat.getID());
+		JLabel sampleTitle = new JLabel("Sample "+graphicStatistics.getID());
 		sampleTitle.setFont(title.getFont().deriveFont((float) 24.0));
 		
 		JCheckBox chkLogScaleX = new JCheckBox("Use log scale for dilutions");
@@ -549,7 +552,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		JPanel right_panel = new JPanel();		
 		right_panel.setLayout(new BoxLayout(right_panel, BoxLayout.PAGE_AXIS));		
 		sampleTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-		right_panel.add(sampleTitle);
+		right_panel.add(sampleTitle);		
 		graphicStatistics.setPreferredSize(new Dimension(widthRight,widthRight));
 		graphicStatistics.setAlignmentX(Component.CENTER_ALIGNMENT);
 		chkLogScaleX.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -664,6 +667,8 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		// set selected row accordingly to currantCFUType in img
 		int currentType = img.getCurrentCFUType() + 1;
 		summaryTable.setRowSelectionInterval(currentType, currentType);
+		
+		graphicStatistics.updateCounts(img.getWell());
 	}
 
 	public void updateSelectionFromImageWell() {
@@ -678,7 +683,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 			if (img.isSelected(index)) {
 				cfuTable.addRowSelectionInterval(i, i);
 			}
-		}
+		}		
 	}
 
 	public void updateCommentButton() {
@@ -1035,7 +1040,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		// cleared
 		CFUTableModel m = (CFUTableModel) cfuTable.getModel();
 		m.removeRow();
-		updateSummaryTable();
+		updateSummaryTable();		
 		cfuTableRowListener.setIsDeaf(false);
 	}
 

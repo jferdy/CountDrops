@@ -9,7 +9,7 @@ public class ViewWellEvent extends EventObject {
 	private static final long serialVersionUID = 1L;
 	Well well;
     String action;
-    AutoDetect autoDetect;
+    AutoDetect autoDetect;    
     
 	private int locationX = 0;
     private int locationY = 0;
