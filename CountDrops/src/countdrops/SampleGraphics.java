@@ -116,8 +116,13 @@ public class SampleGraphics extends JPanel implements MouseMotionListener {
             }
             if(minY<0) minY = 0;
             
-            minY = (int) (minY/5)*5.0;
-            maxY = (1+(int) (maxY/5))*5.0;
+            if(!logScaleY) {
+            	minY = (int) (minY/5)*5.0;
+            	maxY = (1+(int) (maxY/5))*5.0;
+            } else {
+            	minY = 0.0;
+            	maxY = Math.round(Math.log10(maxY)+1);
+            }
             scaleY = 1.0/(maxY-minY);
         }
                 
@@ -163,7 +168,11 @@ public class SampleGraphics extends JPanel implements MouseMotionListener {
             if(CFUtype>0) {
             	bgColor = statistics.getCFUColor(CFUtype-1);
             }
-            
+
+        	double avgX = 0.0;
+        	double avgY = 0.0;
+        	int    nbAvg=0;
+
             for(int i = 0; i < statistics.getNBcounts(); i++) {
             	double x = 1.0;
             	if(logScaleX) {
@@ -196,6 +205,9 @@ public class SampleGraphics extends JPanel implements MouseMotionListener {
             			g.fillOval(ptX[i]-pointRadius/2,(int) ptY[i]-pointRadius/2,pointRadius,pointRadius);
             			g.setColor(Color.BLACK);
             			g.drawOval(ptX[i]-pointRadius/2,(int) ptY[i]-pointRadius/2,pointRadius,pointRadius);
+            			avgX+=x;
+            			avgY+=y;
+            			nbAvg++;
             		} else {
             			int[] xx = new int[3];
             			int[] yy = new int[3];
@@ -210,7 +222,7 @@ public class SampleGraphics extends JPanel implements MouseMotionListener {
             			} else {
             				// y or log(y) is + Infty : triangle is upward
             				yy[2] = ptY[i]- pointRadius/2;
-            			}
+            			}            			
             			g.setColor(bgColor);
             			g.fillPolygon(xx, yy, 3);
             			g.setColor(Color.BLACK);
@@ -221,12 +233,39 @@ public class SampleGraphics extends JPanel implements MouseMotionListener {
             			g.drawOval(ptX[i]-pointRadius,ptY[i]-pointRadius,2*pointRadius,2*pointRadius);
             		}            		
             		if(statistics.getIgnored(i)) {
+            			//ignores points are crossed
             			g.drawLine(ptX[i]-pointRadius, ptY[i]-pointRadius, ptX[i]+pointRadius, ptY[i]+pointRadius);
             			g.drawLine(ptX[i]-pointRadius, ptY[i]+pointRadius, ptX[i]+pointRadius, ptY[i]-pointRadius);
             		}
             	}
             }
             //************************************************************************
+            
+            if(nbAvg>0) {
+            	avgX/=nbAvg;
+            	avgY/=nbAvg;
+            }
+            
+            //on log-log graphs, a line of slope -1 going through average values is drawn
+            if(logScaleX && logScaleY) {
+            	int x1,x2,y1,y2;
+            	if(avgY - (minX-avgX)>maxY) {
+            		x1 = 4*htext + (int) (grWidth*((avgY-maxY+avgX)-minX)*scaleX + 0.5);
+            		y1 = pointRadius + (int) (grHeight*(1-(maxY-minY)*scaleY));            		
+            	} else {
+            		x1 = 4*htext;
+            		y1 = pointRadius + (int) (grHeight*(1-((avgY - (minX-avgX))-minY)*scaleY));	
+            	}        		
+            	if(avgY - (maxX-avgX)<minY) {
+            		x2 = 4*htext + (int) (grWidth*((avgY-minY+avgX)-minX)*scaleX + 0.5);
+            		y2 = pointRadius + (int) grHeight;
+            	} else {
+            		x2 = 4*htext + (int) (grWidth*(maxX-minX)*scaleX + 0.5);        		
+            		y2 = pointRadius + (int) (grHeight*(1-((avgY - (maxX-avgX))-minY)*scaleY));
+            	}
+            	
+            	g.drawLine(x1,y1,x2,y2);
+            }
             
             //draws ticks and tick labels on x scale
             int y = pointRadius + grHeight;

@@ -66,7 +66,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 	// count table
 	private SummaryTableModel summaryTableModel;
 	private JTable summaryTable;
-	JCheckBox chkEmpty,chkIgnore, chkShowWellCountour,chkCloseWhenMoving;
+	JCheckBox chkEmpty,chkIgnore, chkShowWellCountour,chkCloseWhenMoving,chkLogScaleX,chkLogScaleY;
 	JButton   bCpy_row,bCpy_col, bCpy_plate;
 	JSpinner  spinRadius,spinDoWand,spinDoWandMaxArea;
 	JRadioButton chkDoWandYes,chkDoWandNo;
@@ -115,6 +115,8 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		
 
 		graphicStatistics = new SampleGraphics(s); 		//will be added in right panel
+		graphicStatistics.setLogScaleX(evt.isLogScaleX());
+		graphicStatistics.setLogScaleY(evt.isLogScaleY());
 		
 		setResizable(true);		
 		this.setUndecorated(false); //for some reason the cross button to close dialog does not show up...		
@@ -443,14 +445,14 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		JLabel sampleTitle = new JLabel("Sample "+graphicStatistics.getID());
 		sampleTitle.setFont(title.getFont().deriveFont((float) 24.0));
 		
-		JCheckBox chkLogScaleX = new JCheckBox("Use log scale for dilutions");
-		chkLogScaleX.setSelected(true);
+		chkLogScaleX = new JCheckBox("Use log scale for dilutions");
+		chkLogScaleX.setSelected(evt.isLogScaleX());
 		chkLogScaleX.setFocusable(false);
 		chkLogScaleX.setActionCommand("LOGSCALEX"); 
 		chkLogScaleX.addActionListener(this);
 				
-		JCheckBox chkLogScaleY = new JCheckBox("Use log scale for counts");
-		chkLogScaleY.setSelected(false);
+		chkLogScaleY = new JCheckBox("Use log scale for counts");
+		chkLogScaleY.setSelected(evt.isLogScaleY());
 		chkLogScaleY.setFocusable(false);
 		chkLogScaleY.setActionCommand("LOGSCALEY"); 
 		chkLogScaleY.addActionListener(this);
@@ -584,13 +586,9 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		pack();
 		
 		
-		//position and size
-		if(evt!=null) {				
-			if(evt.getWindowSize()!=null) setSize(evt.getWindowSize());
-			setLocation(evt.getLocation());												
-		} else {
-			setLocationRelativeTo(null); //center JFrame on screen
-		}
+		//position and size					
+		if(evt.getWindowSize()!=null) setSize(evt.getWindowSize());
+		setLocation(evt.getLocation());												
 		
 		img.drawCFU();
 		centerImageView(); 		
@@ -737,6 +735,8 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		viewWellEvent.setDoWandMaxArea((Integer) spinDoWandMaxArea.getValue());
 		viewWellEvent.setCircleRadius((Integer) spinRadius.getValue());
 		viewWellEvent.setShowWellContour(chkShowWellCountour.isSelected());
+		viewWellEvent.setLogScaleX(chkLogScaleX.isSelected());
+		viewWellEvent.setLogScaleY(chkLogScaleY.isSelected());
 		viewWellEvent.setSelectedType(summaryTable.getSelectedRow());
 		viewWellEvent.setSlice(img.getImagePlus().getSlice());
 		viewWellEvent.setCanvasMagnification(img.getImageCanvas().getMagnification());

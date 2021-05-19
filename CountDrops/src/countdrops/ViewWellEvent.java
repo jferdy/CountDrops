@@ -29,6 +29,8 @@ public class ViewWellEvent extends EventObject {
     private double  canvasMagnification = 1.0; //magnification
     private boolean Xreversed = false;
     private boolean Yreversed = false;
+    private boolean logScaleX = true;
+    private boolean logScaleY = true;
     
 	public ViewWellEvent(ViewWell vw,Point loc) {
     	super(vw);
@@ -73,7 +75,7 @@ public class ViewWellEvent extends EventObject {
     public void setYreversed(boolean b) {
     	Yreversed = b;    	
     }
-
+   
     public void setDoWandTolerance(int t) {
     	doWandTolerance = t;
     }
@@ -126,10 +128,27 @@ public class ViewWellEvent extends EventObject {
 	public int getDoWandMaxArea()   {
 		return(doWandMaxArea);	
 	}
+	
+	public boolean isLogScaleX() {
+		return(logScaleX);
+	}
+	
+	public boolean isLogScaleY() {
+		return(logScaleY);
+	}
+	
+	public void setLogScaleX(boolean b) {
+		logScaleX = b;	
+	}
+
+	public void setLogScaleY(boolean b) {
+		logScaleY = b;	
+	}
+
 	public int getSelectedType() {
 		return selectedType;
 	}
-
+	
 	public void setSelectedType(int selectedType) {
 		this.selectedType = selectedType;
 	}
