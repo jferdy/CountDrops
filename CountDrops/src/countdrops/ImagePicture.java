@@ -18,8 +18,6 @@ import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
-import javax.swing.JFrame;
-
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
@@ -350,7 +348,7 @@ public class ImagePicture implements ViewWellListener {
 				  loc = this.getImageWindow().getLocation(); 				  
 			  } 
 			  
-			  evt = new ViewWellEvent(w,loc);
+			  evt = new ViewWellEvent(this,loc);
 			  evt.setScreen(device);
 			}			  
 			evt.setXreversed(selectedPlate.isXreversed());
@@ -508,6 +506,7 @@ public class ImagePicture implements ViewWellListener {
 	public void autoDetectRow(ViewWellEvent evt) {
 		final AutoDetect ad = evt.getAutoDetect();
 		final Well w1 = evt.getWell();
+		final ViewWell vw = (ViewWell) evt.getSource();
 		final int slice = evt.getSlice();
 		final int row = w1.getRowInPlate();
 		
@@ -524,10 +523,10 @@ public class ImagePicture implements ViewWellListener {
 					for(int col=0;col<selectedPlate.getNCOLS();col++) {
 						Well w2 = selectedPlate.getWell(row,col);			
 						publish("Looking for CFUs in well "+w2.getName());
-						if(w1==w2 || !w2.isLocked()) {
-							ad.apply(w2.getImagePlus(getImagePlus()),w2,slice);
-							cmpt++;
-						}
+						ad.apply(w2.getImagePlus(getImagePlus()),w2,slice);
+						if(w1==w2) vw.update();
+						overlay.clear();
+						drawPlate(selectedPlate);
 						
 						setProgress(col+1);
 						Thread.sleep(100);
@@ -572,6 +571,7 @@ public class ImagePicture implements ViewWellListener {
 		final AutoDetect ad = evt.getAutoDetect();
 		final int slice = evt.getSlice();
 		final Well w1 = evt.getWell();
+		final ViewWell vw = (ViewWell) evt.getSource();
 		
 		final ProgressDialog pgDlg = new  ProgressDialog(ad,"Loading experiment",selectedPlate.getNROWS());
 		pgDlg.setVisible(true);
@@ -586,15 +586,11 @@ public class ImagePicture implements ViewWellListener {
 				for(int row=0;row<selectedPlate.getNROWS();row++) {
 					Well w2 = selectedPlate.getWell(row,col);
 					publish("Looking for CFUs in well "+w2.getName());
-					if(w1==w2) {
-						ad.apply(w1.getImagePlus(getImagePlus()),w1,slice);											
-						cmpt++;
-					} else { 
-						if(!w2.isLocked()) {
-							ad.apply(w2.getImagePlus(getImagePlus()),w2,slice);
-							cmpt++;
-						}
-					}
+					ad.apply(w2.getImagePlus(getImagePlus()),w1,slice);
+					if(w1==w2) vw.update();											
+					overlay.clear();
+					drawPlate(selectedPlate);					
+					cmpt++;					
 					setProgress(row+1);
 					//Thread.sleep(100);									
 				}				
@@ -634,6 +630,8 @@ public class ImagePicture implements ViewWellListener {
 	@Override
 	public void autoDetectPlate(ViewWellEvent evt) {
 		final AutoDetect ad = evt.getAutoDetect();
+		final ViewWell vw =  (ViewWell) evt.getSource();	
+		
 		final int slice = evt.getSlice();
 		final Well w1 = evt.getWell();
 				
@@ -651,10 +649,24 @@ public class ImagePicture implements ViewWellListener {
 					for(int col=0;col<selectedPlate.getNCOLS();col++) {
 						i++;
 						Well w2 = selectedPlate.getWell(row,col);
-						publish("Looking for CFUs in well "+w2.getName());
-						if(w1==w2 || !w2.isLocked()) {
-							ad.apply(w2.getImagePlus(getImagePlus()),w2,slice);
+						publish("Looking for CFUs in well "+w2.getName());						
+						ad.apply(w2.getImagePlus(getImagePlus()),w2,slice);
+						if(w1==w2 && evt.getSourceClass().equals("ViewWell")) {
+							try {
+								vw.update();
+							} catch(Exception e) {
+								System.out.println("Cannot update ViewWell for "+w1.getName()+"!");								
+								e.printStackTrace();	
+							}
 						}
+						cmpt++;		
+						try {
+							overlay.clear();
+							drawPlate(selectedPlate);
+						} catch(Exception e) {
+							System.out.println("Cannot update ImagePicture!");
+						}
+						
 						setProgress(i);
 						Thread.sleep(100);
 					}

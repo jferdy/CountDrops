@@ -23,12 +23,12 @@ public class SummaryTableModel extends AbstractTableModel {
 		
 	private ImageWell img; //the ImageWell where data are to be found
 	private JCheckBox chkEmpty; //the empty checkbox, which must be disabled if CFU have be counted
-	private GraphCanvas statisticsGraphics = null;
+	private SampleGraphics statisticsGraphics = null;
 	
 	ArrayList<ViewWellListener> listViewWellListener;
 	ViewWellEvent viewWellEvent;
 	
-	public SummaryTableModel(ImageWell ximg,JCheckBox xchk,GraphCanvas gr,ArrayList<ViewWellListener> xlistViewWellListener,ViewWellEvent xviewWellEvent) {
+	public SummaryTableModel(ImageWell ximg,JCheckBox xchk,SampleGraphics gr,ArrayList<ViewWellListener> xlistViewWellListener,ViewWellEvent xviewWellEvent) {
 		super();
 		img=ximg;
 		chkEmpty=xchk;
@@ -51,6 +51,8 @@ public class SummaryTableModel extends AbstractTableModel {
 		this.data = new Object[nbRow][title.length];
 		for(int i=0;i<nbRow;i++) data[i][3]=false;		
 		initializeTable();
+		for(ViewWellListener l : listViewWellListener) l.viewWellChange(viewWellEvent);
+
 	}
 
 	public void initializeTable() {
@@ -97,11 +99,11 @@ public class SummaryTableModel extends AbstractTableModel {
 			}
 		}
 		
+		w.write();
+		
 		//update statistics in graphics
 		statisticsGraphics.updateCounts(img.getWell());
-		
-		for(ViewWellListener l : listViewWellListener) l.viewWellChange(viewWellEvent);
-		w.write();		
+						
 		fireTableDataChanged();					
 	}
 	
@@ -157,6 +159,7 @@ public class SummaryTableModel extends AbstractTableModel {
 		//If the number of CFU is non zero, that checkbox should be set to false and not editable
 		return col == 3 && (Integer) data[row][2] == 0;		
 		}		
+	
 	public Class getColumnClass(int column) {
 		switch (column) {
 		case 0:
@@ -178,9 +181,9 @@ public class SummaryTableModel extends AbstractTableModel {
 //row selection listener for summaryTable
 class SummaryTableRowListener  implements ListSelectionListener{
 	ImageWell img;	
-	GraphCanvas statisticsGraphics = null;
+	SampleGraphics statisticsGraphics = null;
 	
-	public SummaryTableRowListener (ImageWell ximg,GraphCanvas gr) {
+	public SummaryTableRowListener (ImageWell ximg,SampleGraphics gr) {
 		//super();		
 		img =ximg;		
 		statisticsGraphics = gr;
@@ -192,7 +195,7 @@ class SummaryTableRowListener  implements ListSelectionListener{
 		statisticsGraphics = null;
 	}
 	
-	public void setStatisticsGraphics(GraphCanvas gr) {
+	public void setStatisticsGraphics(SampleGraphics gr) {
 		statisticsGraphics = gr;
 	}
 	

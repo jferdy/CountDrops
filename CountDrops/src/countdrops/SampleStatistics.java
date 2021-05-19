@@ -73,6 +73,7 @@ public class SampleStatistics {
 		for(int i=0;i<s.getNbUniqueDilutionValues();i++) {
 			uniqueDilutionValues.add(s.getUniqueDilutionValue(i));
 		}
+		posOfCurrentWell = s.getPosOfCurrentWell();
 	}
 
 
@@ -127,7 +128,6 @@ public class SampleStatistics {
 		//look for well
 		String pln = w.getPlate();
 		String wln = w.getName();
-		Double dil = w.getDilution();
 		
 		int pos = -1;		
 		for(int i=0;i<getNBcounts() && pos<0;i++) {

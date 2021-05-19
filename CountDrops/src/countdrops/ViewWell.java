@@ -71,7 +71,7 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 	JSpinner  spinRadius,spinDoWand,spinDoWandMaxArea;
 	JRadioButton chkDoWandYes,chkDoWandNo;
 	
-	private GraphCanvas graphicStatistics = null;
+	private SampleGraphics graphicStatistics = null;
 	//private SampleStatistics statistics = null;
 	
 	// key pressed and other flags
@@ -110,11 +110,11 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		if(img.getWell().guessIfEmpty()) {
 			img.getWell().setEmpty();
 		}		
-		viewWellEvent = new ViewWellEvent(img.getWell(),this.getLocation());
+		viewWellEvent = new ViewWellEvent(this,this.getLocation());
 		comments = img.getWell().getComments();	
 		
 
-		graphicStatistics = new GraphCanvas(s); 		//will be added in right panel
+		graphicStatistics = new SampleGraphics(s); 		//will be added in right panel
 		
 		setResizable(true);		
 		this.setUndecorated(false); //for some reason the cross button to close dialog does not show up...		
@@ -600,6 +600,10 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		setVisible(true);		
 	}
 	
+	public Well getWell() {
+		if(img==null) return(null);
+		return(img.getWell());
+	}
 	
 	//listen to changes in spinner
 	@Override
@@ -671,6 +675,20 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		graphicStatistics.updateCounts(img.getWell());
 	}
 
+	public void update() {		
+		try {			
+			cfuTableModel.initializeCFU();
+			img.setIsMute(true);
+			img.setShowAllCFU(true);
+			img.drawCFU();						
+			updateSummaryTable();
+			img.setIsMute(false);
+		} catch(Exception e) {
+			System.out.println("Error while updating ViewWell for "+img.getWell().getName());
+			e.printStackTrace();
+		}
+	}
+	
 	public void updateSelectionFromImageWell() {
 		cfuTable.clearSelection();
 		for (int i = 0; i < cfuTable.getRowCount(); i++) {
@@ -797,7 +815,11 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		if(action == "AUTODETECT") {
 			AutoDetect a = new AutoDetect(img,viewWellEvent,listViewWellListener);
 			a.setLocationRelativeTo(this);
-			a.setVisible(true);
+			try {
+				a.setVisible(true);
+			} catch(Exception ex) {
+				ex.printStackTrace();
+			}
 			cfuTable.requestFocus();				
 		}
 

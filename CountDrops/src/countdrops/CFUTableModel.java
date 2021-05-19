@@ -80,7 +80,7 @@ public class CFUTableModel extends AbstractTableModel {
 	public void initializeCFU() {		
 		//resize data and copy from ImageWell
 		int nbCFU = img.getWell().getNbCFU();		
-		int nbslice = img.getImagePlus().getNSlices();
+		int nbslice = img.getImagePlus().getNSlices();		
 		this.data = new Object[nbCFU][title.length];
 		
 		for(int i=0;i<nbCFU;i++) {

@@ -329,7 +329,7 @@ public class Well {
 			int y = getCFU(i).getY();
 			x+=getX()-bbw/2;
 			y+=getY()-bbh/2;
-			if(!contains(x,y)) return true;
+			if(!isInsideWell(x,y)) return true;
 		}
 		return false;
 	}
@@ -459,6 +459,26 @@ public class Well {
 		write();
 	}
 
+	public boolean isInsideWell(int x,int y) {
+		//uses coordinates of ImagePicture
+		double d = Math.sqrt(Math.pow(x-getX(),2.0)+Math.pow(y-getY(),2.0));
+		if(d>D/2.0) return false;
+		return true;
+	}
+
+//	public boolean isInsideWell(ImageCanvas ic,CFU cfu) {
+//		//uses coordinates of imageWell
+//		ImageCanvas ic = img.getCanvas();
+//		double d = D*ic.getMagnification();
+//		Rectangle bounds = ic.getSrcRect();		
+//		int x = (int) (bounds.getCenterX() * ic.getMagnification() - d/2.0);
+//		int y = (int) (bounds.getCenterY() * ic.getMagnification() - d/2.0);
+//		double dist = Math.pow(cfu.getX()*ic.getMagnification()-x,2.0)+Math.pow(cfu.getY()*ic.getMagnification()-y,2.0);
+//		dist = Math.sqrt(dist);
+//		if(dist>d/2.0) return(false);
+//		return(true);
+//	}
+	
 	public void draw(ImagePlus imp) {
 		setStroke();
 		imp.setRoi(roi);
@@ -522,13 +542,7 @@ public class Well {
 			ov.add(pt2);			
 		}
 	}
-
-	public boolean contains(int x,int y) {
-		double d = Math.sqrt(Math.pow(x-getX(),2.0)+Math.pow(y-getY(),2.0));
-		if(d<=getD()/2.0) return true;
-		return false;
-	}
-
+	
 	public boolean isLocked() {
 		File lock = new File(getPath()+"lock");
 		return(lock.exists());
@@ -1039,8 +1053,9 @@ public class Well {
 		
 		return(impCpy);		
 	}
-		
-	public int detectCFU(ImagePlus imp,int slice,double gBlurSigma,double enhanceContrast,double threshold,double minThreshold,boolean lightBackground,int minSize,double minCirc,String defaultCFUtype) {
+	
+
+	public int detectCFU(ImagePlus imp,int slice,double gBlurSigma,double enhanceContrast,double threshold,double minThreshold,boolean lightBackground,int minSize,double minCirc,boolean excludeOutsideWell, String defaultCFUtype) {
 		ImagePlus impCpy = new ImagePlus("",imp.getStack().getProcessor(slice));		
 		
 		//convert to graylevel
@@ -1090,9 +1105,9 @@ public class Well {
 		
 			
 		//particle analysis
-		ParticleAnalyzer pa = new ParticleAnalyzer(ParticleAnalyzer.SHOW_NONE+ParticleAnalyzer.ADD_TO_MANAGER+ParticleAnalyzer.INCLUDE_HOLES+ParticleAnalyzer.EXCLUDE_EDGE_PARTICLES,//
+		ParticleAnalyzer pa = new ParticleAnalyzer(ParticleAnalyzer.SHOW_NONE+ParticleAnalyzer.ADD_TO_MANAGER+ParticleAnalyzer.EXCLUDE_EDGE_PARTICLES,//+ParticleAnalyzer.INCLUDE_HOLES,//
 				Measurements.AREA,
-				null, //new ResultsTable(),
+				null, 
 				minSize,
 				imp.getWidth()*imp.getHeight()/2.0, //max size
 				minCirc,
@@ -1119,17 +1134,32 @@ public class Well {
 		roima.reset();
 		roima.close();			
 		
-		if(vroi==null || vroi.length<=0) return(0); //nothing has been detected
+		if(vroi==null || vroi.length<=0) {
+			setEmpty();
+			return(0); //nothing has been detected
+		}
 		
+		int cmpt = 0;
+		double wellX = impCpy.getWidth()/2.0;
+		double wellY = impCpy.getHeight()/2.0;
 		for(int i=0;i<vroi.length;i++) {
 			//create new CFU
-			Polygon p = vroi[i].getPolygon();			
+			Polygon p = vroi[i].getPolygon();						
+			boolean includeCFU = true;
 			CFU cfu = new CFU(this,new ShapeRoi(p));
 			cfu.setCFUType(defaultCFUtype);
-			addCFU(cfu);
+			if(excludeOutsideWell) {				
+				double dist = Math.pow(wellX-cfu.getX(), 2.0)+Math.pow(wellY-cfu.getY(), 2.0);
+				dist = Math.sqrt(dist);
+				if(dist>D/2.0) includeCFU = false;
+			}
+			if(includeCFU) {							
+				addCFU(cfu);
+				cmpt++;
+			}
 		}		
 
-		return(vroi.length);		
+		return(cmpt);		
 	}
 		
 	public void exportCounts(PrintWriter writer) {

@@ -7,15 +7,16 @@ import java.util.EventObject;
 
 public class ViewWellEvent extends EventObject {
 	private static final long serialVersionUID = 1L;
-	Well well;
-    String action;
-    AutoDetect autoDetect;    
+	Well well = null;
+    String action = "";
+    AutoDetect autoDetect = null;
     
 	private int locationX = 0;
     private int locationY = 0;
     private Dimension windowSize = null; 
     private GraphicsDevice screen = null;
     
+    private String  sourceClass = "Object"; 
     private int     slice = -1;
     private int     circleRadius = 12;
     private int     doWandTolerance = 40;
@@ -29,9 +30,17 @@ public class ViewWellEvent extends EventObject {
     private boolean Xreversed = false;
     private boolean Yreversed = false;
     
-	public ViewWellEvent(Well w,Point loc) {
-    	super(w);
-    	well = w;
+	public ViewWellEvent(ViewWell vw,Point loc) {
+    	super(vw);
+    	sourceClass="ViewWell";
+    	if(vw!=null) well = vw.getWell();
+    	action   = "?";
+    	locationX = (int) loc.getX();
+    	locationY = (int) loc.getY();
+    }
+    
+	public ViewWellEvent(Object o,Point loc) {
+		super(o);
     	action   = "?";
     	locationX = (int) loc.getX();
     	locationY = (int) loc.getY();
@@ -43,6 +52,9 @@ public class ViewWellEvent extends EventObject {
     	locationX= (int) loc.getX();
     	locationY= (int) loc.getY();
     	}
+    public String getSourceClass( ) {
+    	return(sourceClass);
+    }
     public Point getLocation() {return new Point(locationX,locationY);}
     public int getX() {return locationX;}
     public int getY() {return locationY;}

@@ -319,7 +319,6 @@ public class Plate {
 	}
 
 	public void read() {
-		//String configFile = settings.getPath()+"config.cfg";
 		try{
 			settings.read();
 		} catch(Exception ex) {
@@ -403,7 +402,7 @@ public class Plate {
 			for(int l=j-1;l<=j+1;l++) {
 				Well w = getWell(l,k);
 				if(w!=null) {
-					if(w.contains(x,y)) {
+					if(w.isInsideWell(x,y)) {
 						return(w);
 					}
 				}

@@ -5,8 +5,6 @@ import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dialog;
 import java.awt.Dimension;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -428,7 +426,8 @@ public class CountDrops implements ActionListener, ViewWellListener {
 		Picture p = experimentTree.getSelectedPicture();    	
 		if(p==null) return;
 
-
+		System.out.print(p.getFileName()+"\n");
+		
 		//display selected picture
 		if(viewedImage==null || viewedImage.getImageWindow().isClosed() || !(viewedImage.getImagePlus().getTitle().equals(p.getFileName()))) {
 			setWaitCursor();		

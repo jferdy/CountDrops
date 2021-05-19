@@ -12,7 +12,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.BevelBorder;
 
-public class GraphCanvas extends JPanel implements MouseMotionListener {			      
+public class SampleGraphics extends JPanel implements MouseMotionListener {			      
 		private static final long serialVersionUID = 1336326822937286575L;
 		
 		private SampleStatistics statistics = null;
@@ -38,7 +38,7 @@ public class GraphCanvas extends JPanel implements MouseMotionListener {
         private int[] ptX = null;
         private int[] ptY = null;
         
-        public GraphCanvas(SampleStatistics st) {
+        public SampleGraphics(SampleStatistics st) {
             super();
             
             statistics = new SampleStatistics(st);
@@ -217,6 +217,7 @@ public class GraphCanvas extends JPanel implements MouseMotionListener {
             			g.drawPolygon(xx,yy, 3);            				            			
             		}
             		if(i==statistics.getPosOfCurrentWell()) {
+            			//the point corresponding to the currently viewed well is surrounded by a circle
             			g.drawOval(ptX[i]-pointRadius,ptY[i]-pointRadius,2*pointRadius,2*pointRadius);
             		}            		
             		if(statistics.getIgnored(i)) {

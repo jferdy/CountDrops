@@ -37,13 +37,14 @@ public class AutoDetect extends JDialog implements ActionListener, ChangeListene
 	ViewWellEvent viewWellEvent;
 	ArrayList<ViewWellListener> listener;
 	
-	JCheckBox chkLightBackground,chkFixedThreshold;//,chkAutoSplit;	
+	JCheckBox chkLightBackground,chkFixedThreshold,chkExcludeOutsideWell;	
 	JFormattedTextField fieldContrastEnhance,fieldGBlurSigma,fieldMinSize,fieldMinCirc,fieldMinThreshold,fieldThreshold;
 	JComboBox<String> comboBoxCFUtype;
 	
 	//default parameters for CFU detection
 	private int      slice = -1;	
 	private boolean  lightBackground = false;
+	private boolean  excludeOutsideWell = true;
 	private int      minSize = 20;
 	private double   minCirc = 0.2;
 	private double   enhanceContrast = 0.3;
@@ -135,6 +136,10 @@ public class AutoDetect extends JDialog implements ActionListener, ChangeListene
 		gbcL.gridx=1; gbcL.gridy++; left_p.add(new JLabel("Minimum threshold"),gbcL);
 		gbcL.gridx=1; gbcL.gridy++; left_p.add(fieldMinThreshold,gbcL);
 
+		chkExcludeOutsideWell = new JCheckBox("Exclude CFU when outside well");
+		chkExcludeOutsideWell.setSelected(excludeOutsideWell);
+		gbcL.gridx=1; gbcL.gridy++; left_p.add(chkExcludeOutsideWell,gbcL);
+
 		fieldMinSize = new JFormattedTextField(formatInteger);
 		fieldMinSize.setColumns(20);
 		fieldMinSize.setValue(minSize);
@@ -207,6 +212,7 @@ public class AutoDetect extends JDialog implements ActionListener, ChangeListene
 	public void updateParametersFromDisplay() {		
 		defaultCFUtype = (String) (comboBoxCFUtype.getSelectedItem());
 		lightBackground = chkLightBackground.isSelected();
+		excludeOutsideWell = chkExcludeOutsideWell.isSelected();
 		gBlurSigma = Double.parseDouble(fieldGBlurSigma.getValue().toString());
 		enhanceContrast = Double.parseDouble(fieldContrastEnhance.getValue().toString());
 		minThreshold    = Double.parseDouble(fieldMinThreshold.getValue().toString()); 			
@@ -217,6 +223,7 @@ public class AutoDetect extends JDialog implements ActionListener, ChangeListene
 	public void updateDisplayFromParameters() {		 
 		comboBoxCFUtype.setSelectedItem(defaultCFUtype);		
 		chkLightBackground.setSelected(lightBackground);
+		chkExcludeOutsideWell.setSelected(excludeOutsideWell);
 		fieldGBlurSigma.setValue(gBlurSigma);
 		fieldContrastEnhance.setValue(enhanceContrast);
 		fieldMinThreshold.setValue(minThreshold);
@@ -262,13 +269,13 @@ public class AutoDetect extends JDialog implements ActionListener, ChangeListene
 		tags.add("MINIMUM THRESHOLD"); 		//6
 		tags.add("THRESHOLD"); 				//7
 		tags.add("DEFAULT CFU TYPE");		//8
-		
+		tags.add("EXCLUDE OUTSIDE WELL");	//9
 		
 		//int pos = -1;
 		for(int line = 0;line<content.size();line++) {
 			String[] cells = content.get(line).split(";");	
 			cells[0] = cells[0].trim();
-			System.out.println("["+cells[0]+"]");
+			//System.out.println("["+cells[0]+"]");
 			if(cells[0].length()>0) {					
 				cells[0] = cells[0].toUpperCase();
 				if(cells[0].equals(tags.get(0))) lightBackground = cells[1].equals("true");
@@ -280,23 +287,24 @@ public class AutoDetect extends JDialog implements ActionListener, ChangeListene
 				if(cells[0].equals(tags.get(6))) minThreshold = Double.parseDouble(cells[1]);
 				if(cells[0].equals(tags.get(5))) fixedThreshold = cells[1].equals("true");
 				if(cells[0].equals(tags.get(8))) defaultCFUtype = cells[1];
+				if(cells[0].equals(tags.get(9))) excludeOutsideWell = cells[1].equals("true");
 			}
 		}
 
 	}
 	
-	public int apply(ImagePlus imp,Well w) {
-		int slice = imp.getSlice(); //detection will be performed on currently selected slice
-		return apply(imp,w,slice);	
+	public int apply(ImagePlus img,Well w) {
+		int slice = img.getSlice(); //detection will be performed on currently selected slice
+		return apply(img,w,slice);	
 	}
 	
-	public int apply(ImagePlus imp,Well w,int sl) {
+	public int apply(ImagePlus img,Well w,int sl) {
 		//TODO apply to current slice, not default slice so that when autodetect is applied to plate, the same slice is always analyzed.
 		
 		//pre-existing CFUs are deleted before detection		
 		w.deleteAllCFU();	
 		if(!chkFixedThreshold.isSelected()) threshold = -1.0;
-		w.detectCFU(imp.duplicate(),sl,gBlurSigma,enhanceContrast,threshold,minThreshold,lightBackground,minSize,minCirc,defaultCFUtype);		
+		w.detectCFU(img.duplicate(),sl,gBlurSigma,enhanceContrast,threshold,minThreshold,lightBackground,minSize,minCirc,excludeOutsideWell,defaultCFUtype);		
 		return w.getNbCFU();
 	}
 	
@@ -391,6 +399,11 @@ public class AutoDetect extends JDialog implements ActionListener, ChangeListene
 					writer.println("FIXED THRESHOLD;false");
 				}
 				writer.println("THRESHOLD;"+threshold);
+				if(excludeOutsideWell) {
+					writer.println("EXCLUDE OUTSIDE WELL;true");
+				} else {
+					writer.println("EXCLUDE OUTSIDE WELL;false");
+				}
 				writer.println("MINIMUM THRESHOLD;"+minThreshold);
 				writer.println("DEFAULT CFU TYPE;"+defaultCFUtype);				
 				writer.close();

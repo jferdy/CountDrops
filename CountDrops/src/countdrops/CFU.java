@@ -9,20 +9,16 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Scanner;
 
 import ij.ImagePlus;
 import ij.gui.ImageCanvas;
-import ij.gui.OvalRoi;
 import ij.gui.Overlay;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 import ij.gui.ShapeRoi;
 import ij.measure.Measurements;
 import ij.plugin.filter.EDM;
-import ij.plugin.filter.MaximumFinder;
 import ij.plugin.filter.ParticleAnalyzer;
 import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
@@ -51,7 +47,7 @@ public class CFU {
 	private double   circularity;
 	private double[] feret;
 
-	private final int MovingAverageWidth = 5;
+	//private final int MovingAverageWidth = 5;
 	private double magnification = 1.0;
 	
 	public CFU(Well w,ShapeRoi r) {

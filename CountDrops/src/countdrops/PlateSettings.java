@@ -485,7 +485,7 @@ public class PlateSettings {
 	public void read() throws Exception, IOException {
 		if(path==null || fileName==null) throw new Exception("No path or file name provided to read settings!");
 		problems = false;
-		System.out.println("Reading "+fileName);
+		System.out.print("Reading "+fileName+"... ");
 		String tag = "";
 		int line = 0;
 		try {
@@ -666,10 +666,11 @@ public class PlateSettings {
 						}
 					}
 				}
-			}						
+			}
+			System.out.println("done.\n");
 		} catch(Exception e) {
 			JOptionPane.showMessageDialog(null,"Failed to read settings in "+path+fileName+"\nFile seems to be badly configured (line "+(line+1)+", tag "+tag+").", "Reading plate settings", JOptionPane.ERROR_MESSAGE);
-			System.out.println("Error while reading "+fileName);
+			System.out.println("Error while reading "+fileName+"\n");
 			throw new Exception("Error while reading "+fileName);			
 		}
 	}
