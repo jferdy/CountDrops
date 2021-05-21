@@ -304,7 +304,7 @@ public class AutoDetect extends JDialog implements ActionListener, ChangeListene
 		//pre-existing CFUs are deleted before detection		
 		w.deleteAllCFU();	
 		if(!chkFixedThreshold.isSelected()) threshold = -1.0;
-		w.detectCFU(img.duplicate(),sl,gBlurSigma,enhanceContrast,threshold,minThreshold,lightBackground,minSize,minCirc,excludeOutsideWell,defaultCFUtype);		
+		w.detectCFU(img.duplicate(),sl,gBlurSigma,enhanceContrast,threshold,minThreshold,lightBackground,minSize,minCirc,excludeOutsideWell,defaultCFUtype);				
 		return w.getNbCFU();
 	}
 	
@@ -318,15 +318,16 @@ public class AutoDetect extends JDialog implements ActionListener, ChangeListene
 			int pos = apply(img.getImagePlus(),img.getWell());
 			for(int i=pos;i<img.getWell().getNbCFU();i++) img.selectCFU(i);
 			
-			img.setShowAllCFU(true);
 			img.setShowWellContour(true);
-			img.drawCFU();			
+			img.setShowAllCFU(true);
+			img.drawCFU();
 			for (ImageWellListener hl : img.getListeners()) {
 				hl.CFUremoved();
 				hl.CFUadded();
 				hl.CFUedited();
 				hl.SelectionHasChanged();	    			
 			}
+			for (ViewWellListener l : listener) l.viewWellChange(viewWellEvent);
 			return;
 		}
 		
@@ -341,15 +342,15 @@ public class AutoDetect extends JDialog implements ActionListener, ChangeListene
 			
 			//TODO wait until autoDetect is done ?
 			
-			img.setShowAllCFU(true);
-			img.setShowWellContour(true);
-			img.drawCFU();			
-			for (ImageWellListener hl : img.getListeners()) {				
-				hl.CFUadded();				
-				hl.CFUedited();
-				hl.CFUremoved();
-				hl.SelectionHasChanged();
-			}
+//			img.setShowAllCFU(true);
+//			img.setShowWellContour(true);
+//			img.drawCFU();			
+//			for (ImageWellListener hl : img.getListeners()) {				
+//				hl.CFUadded();				
+//				hl.CFUedited();
+//				hl.CFUremoved();
+//				hl.SelectionHasChanged();
+//			}
 			return;
 		}
 		

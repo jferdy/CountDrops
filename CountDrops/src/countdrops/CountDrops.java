@@ -428,12 +428,27 @@ public class CountDrops implements ActionListener, ViewWellListener {
 
 		System.out.print(p.getFileName()+"\n");
 		
-		//display selected picture
-		if(viewedImage==null || viewedImage.getImageWindow().isClosed() || !(viewedImage.getImagePlus().getTitle().equals(p.getFileName()))) {
+		if(viewedImage!=null) {
+			try {
+				//if the selected image is already viewed: do not change it
+				if(!viewedImage.getImagePlus().getTitle().equals(p.getFileName())) {				
+					//the selected image is not viewed: close window if necessary and set selected image to null
+					if(!viewedImage.getImageWindow().isClosed()) viewedImage.close();				
+					viewedImage = null;
+				}
+			} catch (Exception e) {
+				viewedImage = null;
+				System.out.println("Error while trying to access to viewed image!");
+				e.printStackTrace();
+				return;
+			}
+		}
+		
+		//display newly selected picture
+		if(viewedImage==null) {
 			setWaitCursor();		
 
 			System.gc();
-			if(viewedImage!=null && !viewedImage.getImageWindow().isClosed()) viewedImage.close(); 
 			try{
 				viewedImage = new ImagePicture(p,instance);
 			} catch(Exception ex) {

@@ -56,6 +56,10 @@ public class SampleGraphics extends JPanel implements MouseMotionListener {
             this.addMouseMotionListener(this);
         }
         
+        public SampleStatistics getSampleStatistics() {
+        	return(statistics);	
+        }
+        
         public void setLogScaleX(boolean b) {logScaleX=b;}
         public void setLogScaleY(boolean b) {logScaleY=b;}
         
@@ -77,7 +81,7 @@ public class SampleGraphics extends JPanel implements MouseMotionListener {
         public void updateCounts(Well w) {
     		statistics.updateCounts(w);	
     		repaint();
-    	}
+    	}        
         
         public void updateMinMaxX() {
         	if(statistics==null) return;

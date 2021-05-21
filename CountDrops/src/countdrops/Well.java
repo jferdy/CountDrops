@@ -656,7 +656,7 @@ public class Well {
 			for(int i=1;i<settings.getNCFUTYPES()+1;i++) str = str+";"+nonCountable[i];	    
 			writer.println(str);
 			writer.print(ignore);
-			writer.close();
+			writer.close();					
 			saved = true;
 		}
 		catch(IOException se){
@@ -664,9 +664,10 @@ public class Well {
 	}
 
 	public void save() {
-		write();
+		write();		
+		cleanRoiFiles();
 		for(int i=0;i<this.getNbCFU();i++) {
-			this.getCFU(i).write();
+			getCFU(i).write();
 		}		
 	}
 	
@@ -678,9 +679,9 @@ public class Well {
 	public void addCFU(CFU cfu) {
 		if(cfu!=null) {
 			cfuList.add(cfu);
-			empty = false;
-			saved = false;
+			empty = false;			
 			cfu.write();
+			write();
 		}
 	}
 
@@ -719,6 +720,7 @@ public class Well {
 			empty=false;
 		}
 		saved = false;
+		write();
 		return true;
 	}
 	
@@ -729,7 +731,7 @@ public class Well {
 				CFU cfu = cfuList.get(index);
 				if(cfu.isSaved()) {
 					someCFUdeleted = true;
-					System.out.println("delete "+name+" "+cfu.getCFUName());
+					//System.out.println("delete "+name+" "+cfu.getCFUName());
 					cfu.deleteRoiFile();
 					cfuList.remove(index);
 				}
@@ -740,7 +742,10 @@ public class Well {
 		} else {
 			empty=false;
 		}
-		if(someCFUdeleted) saved = false;
+		if(someCFUdeleted) {
+			saved = false;
+			write();
+		}
 		return someCFUdeleted;	
 	}
 	
@@ -761,6 +766,7 @@ public class Well {
 			empty=false;
 		}
 		saved = false;
+		write();
 		return true;
 	}
 	
@@ -777,7 +783,10 @@ public class Well {
 		} else {
 			empty=false;
 		}
-		if(someCFUdeleted) saved = false;
+		if(someCFUdeleted) {
+			saved = false;
+			write();
+		}
 		return someCFUdeleted;
 	}
 
@@ -799,9 +808,10 @@ public class Well {
 		}
 		
 		if(someCFUchanged) {
-			//type i should not be NC if some CFU have been changed!
+			//type i should not be NC if some CFU have been changed to i!
 			nonCountable[i] = false;
 			saved = false;
+			write();
 		}
 		return someCFUchanged;
 	}
@@ -818,6 +828,7 @@ public class Well {
 		if(someCFUchanged) {
 			nonCountable[0] = false;
 			saved = false;
+			write();
 		}
 		return someCFUchanged;
 	}
@@ -834,6 +845,7 @@ public class Well {
 		if(someCFUchanged) {
 			nonCountable[0] = false;
 			saved = false;
+			write();
 		}
 		return someCFUchanged;
 	}
@@ -887,8 +899,8 @@ public class Well {
 		CFU[] newcfu = cfu1.split();
 		if(newcfu!=null) {
 			for(int i=0;i<newcfu.length;i++) {
-				addCFU(newcfu[i]);
 				newcfu[i].write();
+				addCFU(newcfu[i]);				
 			}
 			this.deleteCFU(index);
 			return(newcfu.length);
@@ -967,6 +979,7 @@ public class Well {
 
 		return(listOfFiles);
 	}
+	
 	public void deleteRoiFiles() {
 		File[] listOfFiles = listRoiFiles();
 		if(listOfFiles==null || listOfFiles.length<=0) return;
@@ -975,6 +988,24 @@ public class Well {
 			if(listOfFiles[i].exists()) listOfFiles[i].delete();
 		}
 	}
+
+	public void cleanRoiFiles() {
+		//check that roi files do match an existing CFU
+		//suppress them otherwise
+		File[] listOfFiles = listRoiFiles();
+		if(listOfFiles==null || listOfFiles.length<=0) return;
+
+		for(int i=0;i<listOfFiles.length;i++) {
+			if(listOfFiles[i].exists()) {
+				boolean exists = false;
+				for(int j=0;j<getNbCFU() && !exists;j++) {					
+					if(listOfFiles[i].getName().contentEquals(this.getCFU(j).getCFUName()+".roi")) exists=true;					
+				}
+				if(!exists) listOfFiles[i].delete();
+			}
+		}
+	}
+
 	public void loadRoiFiles() {
 		File[] listOfFiles = listRoiFiles();		
 		if(listOfFiles==null) return;
@@ -1135,7 +1166,11 @@ public class Well {
 		roima.close();			
 		
 		if(vroi==null || vroi.length<=0) {
-			setEmpty();
+			if(!hasNonCountable()) {
+				saved = false;
+				setEmpty(true);
+				save();
+			}
 			return(0); //nothing has been detected
 		}
 		
@@ -1144,21 +1179,36 @@ public class Well {
 		double wellY = impCpy.getHeight()/2.0;
 		for(int i=0;i<vroi.length;i++) {
 			//create new CFU
-			Polygon p = vroi[i].getPolygon();						
+			Polygon p = vroi[i].getPolygon();														
 			boolean includeCFU = true;
-			CFU cfu = new CFU(this,new ShapeRoi(p));
-			cfu.setCFUType(defaultCFUtype);
-			if(excludeOutsideWell) {				
-				double dist = Math.pow(wellX-cfu.getX(), 2.0)+Math.pow(wellY-cfu.getY(), 2.0);
+			if(excludeOutsideWell) {								
+				double dist = Math.pow(wellX-p.getBounds().getCenterX(), 2.0)+Math.pow(wellY-p.getBounds().getCenterY(), 2.0);
 				dist = Math.sqrt(dist);
 				if(dist>D/2.0) includeCFU = false;
 			}
-			if(includeCFU) {							
+			if(includeCFU) {
+				CFU cfu = new CFU(this,new ShapeRoi(p),defaultCFUtype);
+				//cfu.setCFUType(defaultCFUtype); //set CFU type writes the CFU FILE, so that the CFU file is created even if the CFU is not added to the well!
 				addCFU(cfu);
 				cmpt++;
 			}
 		}		
 
+		//is the well empty?
+		if(cmpt>0) {
+			saved = false;
+			setEmpty(false);
+			for(int i=0;i<this.getNCFUTYPES();i++) if(defaultCFUtype.contentEquals(getCFUType(i))) setNonCountable(i, false);
+		} else {
+			if(!hasNonCountable()) {
+				saved = false;
+				setEmpty(true);			
+			}
+		}
+		
+		
+		save(); //save well informations and CFU files
+		
 		return(cmpt);		
 	}
 		

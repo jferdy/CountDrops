@@ -212,6 +212,16 @@ public class SampleStatistics {
 		if(i<0 || i>getNBcounts()) return false;
 		return(ignore.get(i));
 	}
+
+	public boolean setIgnored(int i,boolean b) {
+		if(i<0 || i>getNBcounts()) return false;		
+		return(ignore.set(i,b));
+	}
+
+	public boolean setIgnored(boolean b) {
+		return(ignore.set(posOfCurrentWell,b));
+	}
+
 	public int getCount(int i,int cfutype) {
 		if(counts==null) return -3;
 		if(i<0 || i>getNBcounts()) return -3;

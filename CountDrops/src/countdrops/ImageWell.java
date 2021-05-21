@@ -662,7 +662,7 @@ public class ImageWell {
     		Double imgarea = (double) (imp.getHeight() * imp.getWidth());
     		if(100.0*statroi.area/imgarea > doWandMaxArea) {
     				imp.deleteRoi(); //otherwise roi keeps being displayed
-    				return(null); //the roi is to big relative to image !
+    				return(null); //the roi is too big relative to image !
                     			  //this is probably because user has clicked outside a CFU and the whole
 	                 			  //background has been selected.    				
     		}
@@ -738,8 +738,7 @@ public class ImageWell {
     
     //functions to delete CFU
     public void deleteSelectedCFU() {
-    	if(!well.deleteCFU(selectedCFU)) return;
-    	
+    	if(!well.deleteCFU(selectedCFU)) return;    	
     	selectedCFU.clear();    	
     	drawCFU();
     	if(!isMute) {

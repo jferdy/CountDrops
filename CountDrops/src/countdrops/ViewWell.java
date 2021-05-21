@@ -609,17 +609,18 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		JSpinner sp = (JSpinner) ev.getSource();
 		int value = (int) sp.getValue();
 		String name = sp.getName(); 
+		
 		if(name.equals(this.spinDoWand.getName())) {	
-			viewWellEvent.setDoWandTolerance(value);
-			img.setDoWandTolerance(value);
+			if(viewWellEvent!=null) viewWellEvent.setDoWandTolerance(value);
+			if(img!=null) img.setDoWandTolerance(value);
 		}
 		if(name.equals(this.spinDoWandMaxArea.getName())) {	
-			viewWellEvent.setDoWandMaxArea(value);
-			img.setDoWandMaxArea(value);
+			if(viewWellEvent!=null) viewWellEvent.setDoWandMaxArea(value);
+			if(img!=null) img.setDoWandMaxArea(value);
 		}
 		if(name.equals(this.spinRadius.getName())) {
-			viewWellEvent.setCircleRadius(value);
-			img.setCFURadius(value);	
+			if(viewWellEvent!=null) viewWellEvent.setCircleRadius(value);
+			if(img!=null) img.setCFURadius(value);	
 		}				
 	}	
 
@@ -676,11 +677,13 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 	public void update() {		
 		try {			
 			cfuTableModel.initializeCFU();
-			img.setIsMute(true);
-			img.setShowAllCFU(true);
-			img.drawCFU();						
 			updateSummaryTable();
+			img.setIsMute(true);			
+			img.drawCFU();									
 			img.setIsMute(false);
+			img.setShowAllCFU(true);
+			
+			for(ViewWellListener l : listViewWellListener) l.viewWellChange(viewWellEvent);
 		} catch(Exception e) {
 			System.out.println("Error while updating ViewWell for "+img.getWell().getName());
 			e.printStackTrace();
@@ -716,14 +719,30 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 	}
 	
 	public void moveToNeighborWell(String where) throws InterruptedException {		
-		if(where.equals("MOVERIGHT") && img.getWell().getColInPlate()>=img.getPlate().getNCOLS()-1) return;
-		if(where.equals("MOVELEFT")  && img.getWell().getColInPlate()<=0) return;
-		if(where.equals("MOVEDOWN")  && img.getWell().getRowInPlate()>=img.getPlate().getNROWS()-1) return;
-		if(where.equals("MOVEUP")    && img.getWell().getRowInPlate()<=0) return;
+		int row,col;
+		try {
+			col = img.getWell().getColInPlate();
+			row = img.getWell().getRowInPlate();
+		} catch(Exception e) {
+			System.out.println("Error while moving to neighbor well: cannot determine current position!");
+			e.printStackTrace();
+			return;
+		}
+		int nbcol,nbrow;
+		try {
+			nbcol = img.getPlate().getNCOLS();
+			nbrow = img.getPlate().getNROWS();
+		} catch (Exception e) {
+			System.out.println("Error while moving to neighbor well: cannot access to current plate!");
+			e.printStackTrace();
+			return;			
+		}
 		
-		
-		
-		
+		if(where.equals("MOVERIGHT") && col>=nbcol-1) return;
+		if(where.equals("MOVELEFT")  && col<=0) return;
+		if(where.equals("MOVEDOWN")  && row>=nbrow-1) return;
+		if(where.equals("MOVEUP")    && row<=0) return;
+							
 		//update ViewWellEvent settings that will be passed to whoever is listening
 		GraphicsDevice screen = this.getGraphicsConfiguration().getDevice();		
 		viewWellEvent.setScreen(screen);
@@ -767,6 +786,11 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		
 		if (action == "DELETE") {
 			img.deleteAllCFU();
+			if(img.getWell().isEmpty()) {
+				chkEmpty.setEnabled(true);
+				chkEmpty.setSelected(true);			
+			}
+			for(ViewWellListener l : listViewWellListener) l.viewWellChange(viewWellEvent);
 			return;
 		}
 
@@ -777,6 +801,8 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		
 		if (action == "IGNORE") {
 			img.getWell().setIgnored(chkIgnore.isSelected());
+			graphicStatistics.getSampleStatistics().setIgnored(chkIgnore.isSelected());
+			graphicStatistics.repaint();
 			for(ViewWellListener l : listViewWellListener) l.viewWellChange(viewWellEvent);
 		}
 		
@@ -888,6 +914,10 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 									// both trigger delete
 		case KeyEvent.VK_BACK_SPACE:
 			img.deleteSelectedCFU();
+			if(img.getWell().isEmpty()) {
+				chkEmpty.setEnabled(true);
+				chkEmpty.setSelected(true);			
+			}
 			break;
 
 		case KeyEvent.VK_SPACE:
@@ -1044,6 +1074,8 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		updateSelectionFromImageWell();
 		updateSummaryTable();
 		cfuTableRowListener.setIsDeaf(false);
+		//transmits message to whoever is listening
+		for(ViewWellListener l : listViewWellListener) l.viewWellChange(viewWellEvent);
 	} // CFU data (e.g. CFU type) have been changed
 
 	public void CFUadded() {
@@ -1053,17 +1085,21 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		m.addRow();
 		updateSummaryTable();
 		cfuTableRowListener.setIsDeaf(false);
+		//transmits message to whoever is listening
+		for(ViewWellListener l : listViewWellListener) l.viewWellChange(viewWellEvent);
 	}
 
 	public void CFUremoved() {
 		cfuTableRowListener.setIsDeaf(true);
 		// CFUs have been deleted in ImageWell
-		// the notification must be sent out by ImageWell before selectedCFI is
+		// the notification must be sent out by ImageWell before selectedCFU is
 		// cleared
 		CFUTableModel m = (CFUTableModel) cfuTable.getModel();
 		m.removeRow();
 		updateSummaryTable();		
 		cfuTableRowListener.setIsDeaf(false);
+		//transmits message to whoever is listening
+		for(ViewWellListener l : listViewWellListener) l.viewWellChange(viewWellEvent);
 	}
 
 

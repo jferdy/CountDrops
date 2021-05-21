@@ -25,7 +25,7 @@ public class SummaryTableModel extends AbstractTableModel {
 	private JCheckBox chkEmpty; //the empty checkbox, which must be disabled if CFU have be counted
 	private SampleGraphics statisticsGraphics = null;
 	
-	ArrayList<ViewWellListener> listViewWellListener;
+	ArrayList<ViewWellListener> listViewWellListener = null;
 	ViewWellEvent viewWellEvent;
 	
 	public SummaryTableModel(ImageWell ximg,JCheckBox xchk,SampleGraphics gr,ArrayList<ViewWellListener> xlistViewWellListener,ViewWellEvent xviewWellEvent) {
@@ -48,8 +48,7 @@ public class SummaryTableModel extends AbstractTableModel {
 
 		//data
 		int nbRow = img.getWell().getNCFUTYPES()+1;
-		this.data = new Object[nbRow][title.length];
-		for(int i=0;i<nbRow;i++) data[i][3]=false;		
+		this.data = new Object[nbRow][title.length];			
 		initializeTable();
 		for(ViewWellListener l : listViewWellListener) l.viewWellChange(viewWellEvent);
 
@@ -58,6 +57,8 @@ public class SummaryTableModel extends AbstractTableModel {
 	public void initializeTable() {
 		Well w = img.getWell();
 		int nbRow = w.getNCFUTYPES()+1;
+		
+		for(int i=0;i<nbRow;i++) data[i][3]=false;
 		
 		data[0][0]="NA";
 		data[0][1]="SPACE";
@@ -103,7 +104,19 @@ public class SummaryTableModel extends AbstractTableModel {
 		
 		//update statistics in graphics
 		statisticsGraphics.updateCounts(img.getWell());
-						
+		
+		//send out notification to ImagePicture and other objects listening to ViewWell
+		//TODO does not work when called from autodetect: the notification sent out to CounDrops gui makes the whole stuff crash...
+		//I really don't understand why.
+		
+//        for(ViewWellListener l : listViewWellListener) {
+//        	try {
+//        		l.viewWellChange(viewWellEvent);
+//        	} catch(Exception e) {
+//        		System.out.println("Error while updating summary table: viewWellHasChanged cannot be sent out!");
+//        		e.printStackTrace();
+//        	}
+//        }
 		fireTableDataChanged();					
 	}
 	
@@ -147,10 +160,18 @@ public class SummaryTableModel extends AbstractTableModel {
         	}
         }   
         img.getWell().setEmpty(chkEmpty.isSelected());
-        for(ViewWellListener l : listViewWellListener) l.viewWellChange(viewWellEvent);
+        for(ViewWellListener l : listViewWellListener) {
+        	try {
+        		l.viewWellChange(viewWellEvent);
+        	} catch(Exception e) {
+        		System.out.println("Error while changing value in summary table: viewWellHasChanged cannot be sent out!");
+        		e.printStackTrace();
+        	}
+        }
         img.getWell().write();
         
         statisticsGraphics.updateCounts(img.getWell());
+        for(ViewWellListener l : listViewWellListener) l.viewWellChange(viewWellEvent);
         fireTableCellUpdated(row, col);        
     }
 	
