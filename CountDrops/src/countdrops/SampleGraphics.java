@@ -4,20 +4,24 @@ import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.RenderingHints;
+import java.awt.Toolkit;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.ToolTipManager;
 import javax.swing.border.BevelBorder;
 
-public class SampleGraphics extends JPanel implements MouseMotionListener {			      
+public class SampleGraphics extends JPanel {			      
 		private static final long serialVersionUID = 1336326822937286575L;
 		
 		private SampleStatistics statistics = null;
 		private int CFUtype = -1;
-        
+
         private int pointRadius = 10;
         
         private int htext = -1;
@@ -31,29 +35,40 @@ public class SampleGraphics extends JPanel implements MouseMotionListener {
         
         private double scaleX = 1.0;
         private double scaleY = 1.0;
-
+        
         private boolean logScaleX = true;
         private boolean logScaleY = false;
         
         private int[] ptX = null;
         private int[] ptY = null;
         
+        private final int defaulInitialDelay = ToolTipManager.sharedInstance().getInitialDelay();
+
         public SampleGraphics(SampleStatistics st) {
-            super();
+            super();                       
             
             statistics = new SampleStatistics(st);
-                        
+            
+            
             ptX = new int[statistics.getNBcounts()];
             ptY = new int[statistics.getNBcounts()];
+            updateMinMaxX();
+            updateMinMaxY();
                         
             //setMinimumSize(new Dimension(100,100));
             setBackground(new java.awt.Color(255, 255, 255));            
             setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
-            
-            updateMinMaxX();
-            updateMinMaxY();
-            
-            this.addMouseMotionListener(this);
+                                                
+            setToolTipText("");
+            addMouseListener(new MouseAdapter() {
+            	  public void mouseEntered(MouseEvent me) {
+            	    ToolTipManager.sharedInstance().setInitialDelay(0);
+            	  }
+            	  public void mouseExited(MouseEvent me) {
+            		  //System.out.println("out");
+            		  ToolTipManager.sharedInstance().setInitialDelay(defaulInitialDelay);
+            	  }
+            	});
         }
         
         public SampleStatistics getSampleStatistics() {
@@ -129,16 +144,28 @@ public class SampleGraphics extends JPanel implements MouseMotionListener {
             }
             scaleY = 1.0/(maxY-minY);
         }
-                
-        public void paint(Graphics g0) {
+         
+        public void paintComponent(Graphics g0) {
             super.paintComponent(g0);
+            
+            //buttonList.clear();
+            
             Graphics2D g = (Graphics2D) g0;
+            
+            //improves text rendering on graphic            
+            Map<?, ?> desktopHints = (Map<?, ?>) Toolkit.getDefaultToolkit().getDesktopProperty("awt.font.desktophints");
+            if (desktopHints != null) {
+            	    g.setRenderingHints(desktopHints);
+            }            
+            //improves the rendering of ovals and lines
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
             
             //box
             FontMetrics metrics = g.getFontMetrics();
             htext = metrics.getHeight();            
             grWidth = getWidth()-(pointRadius+4*htext);
             grHeight = getHeight()-(pointRadius+4*htext);
+            g.setColor(Color.DARK_GRAY);
             g.drawRect(4*htext,pointRadius, grWidth,grHeight);  
             
             /*
@@ -161,12 +188,62 @@ public class SampleGraphics extends JPanel implements MouseMotionListener {
             if(logScaleX) {
             	str = str + " (log scale)";            
             }
+            g.setColor(Color.BLACK);
             g.drawString(str, 4*htext+grWidth/2-metrics.stringWidth(str)/2, pointRadius+grHeight+2*htext);
             
             
             if(CFUtype<0) return;
             updateMinMaxY();
+
+            //draws ticks and tick labels on x scale            
+            for(int i = 0; i < statistics.getNbUniqueDilutionValues(); i++) {
+            	double z = statistics.getUniqueDilutionValue(i);
+            	if(logScaleX) {
+            		z = Math.log10(statistics.getUniqueDilutionValue(i));
+            	}            	
+            	int x = 4*htext + (int) (grWidth*(z-minX)*scaleX + 0.5);
+            	int y = pointRadius + grHeight;
+            	str = ""+statistics.getUniqueDilutionValue(i);
+            	g.setColor(Color.BLACK);
+            	g.drawLine(x,y,x,y+5);            	
+            	g.drawString(str,x-metrics.stringWidth(str)/2,y+htext);
+            	//System.out.print(x+" "+y+" "+str);
+            }
             
+          //draws ticks and tick labels on y scale            
+          double dy = (maxY-minY)/5.0;
+          if(dy<1.0) {
+        	  if(logScaleY) {
+        		  dy = Math.log10(2.0);
+        	  } else {
+        		  dy = 1.0;
+        	  }
+          } else {  
+        	  if(dy>5.0) {
+        		  dy = (int) (dy/5);
+        		  dy *= 5.0;
+        	  } else {
+        		  dy = 5.0;
+        	  }
+          }
+
+          double z = 0.0;          
+          while(z<maxY) {
+        	  if(z>=minY) {     
+        		  int x = 4*htext;
+        	  	  int y = pointRadius + (int) (grHeight*(1-(z-minY)*scaleY));
+        	  	  if(logScaleY) {
+        	  		  str = ""+Math.round(Math.pow(10.0,z));
+        	  	  } else {
+        	  		  str = ""+Math.round(z);  
+        	  	  }        	    
+        	  	  g.setColor(Color.BLACK);
+        	  	  g.drawLine(x-5,y,x,y);        	  
+        	  	  g.drawString(str,x-6-metrics.stringWidth(str),y+htext/3);
+        	  }
+        	  z+=dy;        	  
+          }
+
             //draw points ***************************************************
             Color bgColor = Color.WHITE;
             if(CFUtype>0) {
@@ -177,7 +254,7 @@ public class SampleGraphics extends JPanel implements MouseMotionListener {
         	double avgY = 0.0;
         	int    nbAvg=0;
 
-            for(int i = 0; i < statistics.getNBcounts(); i++) {
+            for(int i = 0; i < statistics.getNBcounts(); i++) {            	
             	double x = 1.0;
             	if(logScaleX) {
             		x = Math.log10(statistics.getDilution(i));
@@ -205,10 +282,12 @@ public class SampleGraphics extends JPanel implements MouseMotionListener {
             		ptY[i] = pointRadius + (int) (grHeight*(1-(y-minY)*scaleY));
             		
             		if(!inftyY) {
+            			
             			g.setColor(bgColor);
             			g.fillOval(ptX[i]-pointRadius/2,(int) ptY[i]-pointRadius/2,pointRadius,pointRadius);
             			g.setColor(Color.BLACK);
             			g.drawOval(ptX[i]-pointRadius/2,(int) ptY[i]-pointRadius/2,pointRadius,pointRadius);
+            			            			
             			avgX+=x;
             			avgY+=y;
             			nbAvg++;
@@ -271,80 +350,34 @@ public class SampleGraphics extends JPanel implements MouseMotionListener {
             	g.drawLine(x1,y1,x2,y2);
             }
             
-            //draws ticks and tick labels on x scale
-            int y = pointRadius + grHeight;
-            for(int i = 0; i < statistics.getNbUniqueDilutionValues(); i++) {
-            	double z = statistics.getUniqueDilutionValue(i);
-            	if(logScaleX) {
-            		z = Math.log10(statistics.getUniqueDilutionValue(i));
-            	}
-            	int x = 4*htext + (int) (grWidth*(z-minX)*scaleX + 0.5);            	
-            	g.drawLine(x,y,x,y+5);
-            	str = ""+statistics.getUniqueDilutionValue(i);
-            	g.drawString(str,x-metrics.stringWidth(str)/2,y+htext);
-            	//System.out.print(x+" "+y+" "+str);
-            }
-            
-          //draws ticks and tick labels on y scale            
-          int x = 4*htext;
-          double dy = (maxY-minY)/5.0;
-          
-          if(dy<1.0) {
-        	  dy = 1.0;
-          } else {  
-        	  if(dy>5.0) {
-        		  dy = (int) (dy/5);
-        		  dy *= 5.0;
-        	  } else {
-        		  dy = 5.0;
-        	  }
-          }
-          
-          double z = 0.0;          
-          while(z<maxY) {
-        	  if(z>=minY) {        		  
-        	  	  y = pointRadius + (int) (grHeight*(1-(z-minY)*scaleY));
-        	  	  if(logScaleY) {
-        	  		  str = ""+((int) (Math.pow(10.0,z)*100))/100.0;
-        	  	  } else {
-        	  		  str = ""+((int) z*100)/100.0;  
-        	  	  }        	          	          	  
-        	  	  g.drawLine(x-5,y,x,y);        	  
-        	  	  g.drawString(str,x-6-metrics.stringWidth(str),y+htext/3);
-        	  }
-        	  z+=dy;        	  
-          }
         }
         
-		@Override
-		public void mouseDragged(MouseEvent arg0) {			
-		}
 		
 		@Override
-		public void mouseMoved(MouseEvent evt) {
-			int x = evt.getX();					
-			int y = evt.getY();
-						
-			String txt = "";
+		public String getToolTipText(MouseEvent event) {
+			Point pt = event.getPoint();
+			
+			String txt = "<html>";
 			for(int i=0;i<statistics.getNBcounts();i++) {
-				double d = Math.sqrt(Math.pow(x-ptX[i],2.0)+Math.pow(y-ptY[i],2.0));
-				//System.out.println("(" +x+ "," + "," +y+ ") <-> ("+ptX[i]+","+ptY[i]+") d="+d);				
+				double d = Math.sqrt(Math.pow(pt.getX()-ptX[i],2.0)+Math.pow(pt.getY()-ptY[i],2.0));
+				//System.out.println("(" +pt.getX()+ "," + "," +pt.getY()+ ") <-> ("+ptX[i]+","+ptY[i]+") d="+d);				
 				if(d < pointRadius/2.0) {
-					if(!txt.equals("")) txt += "\n";
-					txt += "plate "+statistics.getPlateName(i)+", ";
-					txt += "well "+statistics.getWellName(i);
-					txt += " (dilution: "+statistics.getDilution(i)+", ";
-					txt += "volume: "+statistics.getVolume(i)+"): ";
+					txt += "<h2>plate "+statistics.getPlateName(i)+", ";
+					txt += "well "+statistics.getWellName(i)+"</h2>";
+					txt += "<p>(dilution: "+statistics.getDilution(i)+", ";
+					txt += "volume: "+statistics.getVolume(i)+")</p><h3>";
 					if(statistics.getCount(i,CFUtype)==-1) {
-						txt += "count is Inf.";
+						txt += "count set to infinite";
 					} else {
 						txt += "count = "+statistics.getCount(i,CFUtype);
-					}					
+					}
+					txt+="</h3>";
 				}
 			}
-			
-			if(!txt.equals("")) {
-				JOptionPane.showMessageDialog(this,txt,"Sample "+statistics.getID(),JOptionPane.INFORMATION_MESSAGE);
-			}
+
+		    if(txt=="<html>") return null;
+		    txt+="</html>";
+		    return txt;
 		}
+
     }

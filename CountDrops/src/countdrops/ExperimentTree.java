@@ -314,7 +314,7 @@ class ExperimentTreeRenderer extends DefaultTreeCellRenderer {
         backgroundNonSelectionColor = defaultRenderer.getBackgroundNonSelectionColor();
         
         txt.setContentType("text/html");
-        txt.setBackground(backgroundNonSelectionColor);
+        txt.setOpaque(false);
         
         pane.setPreferredSize(new Dimension(400, 24));
         pane.setOpaque(false);
@@ -336,16 +336,7 @@ class ExperimentTreeRenderer extends DefaultTreeCellRenderer {
 
     	if (value != null || (value instanceof DefaultMutableTreeNode))  {    	        
     		Object userObject = ((DefaultMutableTreeNode) value).getUserObject();
-    		    		    	
-    		if(sel) {    			    			
-    			txt.setBackground(backgroundSelectionColor);
-    			pane.setBackground(backgroundSelectionColor);
-    		    
-    		} else {
-    			txt.setBackground(backgroundNonSelectionColor);
-    			pane.setBackground(backgroundNonSelectionColor);
-    		}
-    		
+    		    		    		    	    	
     		Icon ic = null;
     		Icon ic_comments = null;
     		String str = "<html><span style=\"font-family:Dialog;font-size:12pt\">";

@@ -193,6 +193,7 @@ public class ImagePicture implements ViewWellListener {
 		canvas.addMouseMotionListener(canvasMouseMotionListener);		
 		canvas.addKeyListener(canvasKeyListener);			
 		 
+	
 	}
 
 	public Overlay getOverlay() { return overlay;}
@@ -292,6 +293,7 @@ public class ImagePicture implements ViewWellListener {
 	public void show() {
 		try {
 			window = new ImageWindow(imp,canvas);
+			window.setLocationRelativeTo(CountDrops.getGui());
 			window.setVisible(true);			
 			window.addWindowListener(windowListener);			
 		} catch ( Exception e) {		

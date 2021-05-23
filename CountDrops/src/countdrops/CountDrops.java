@@ -48,6 +48,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.ToolTipManager;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -130,6 +131,12 @@ public class CountDrops implements ActionListener, ViewWellListener {
 
 	//*********
 	public static void main(String[] args) {
+		try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
+            ex.printStackTrace();
+        }
+		
 		instance = new CountDrops();		
 
 		
@@ -456,7 +463,7 @@ public class CountDrops implements ActionListener, ViewWellListener {
 				System.out.println("Failed to open image!");
 				setDefaultCursor();
 				return;
-			}
+			}			
 			viewedImage.show();
 			//must be called after show, otherwise ImageWindpw has not been instantiated yet
 			viewedImage.getImageWindow().addWindowListener(windowListener);
@@ -1100,14 +1107,14 @@ public class CountDrops implements ActionListener, ViewWellListener {
 			return;
 		}
 		if(action=="EXPORTRESULT") {
-			ExportResult er = new ExportResult(experiment);
-			if(er.getStatus()==ExportResult.OK) {
 				experiment.save();
-				
+				System.out.print("\n");
+								
 				String path = experiment.getPath();			
 				String countfile = experiment.exportCounts();
 				String loadfile = countfile.replace("COUNTS","LOAD");
-
+				System.out.println("Counts have been written in "+countfile);
+				
 				//path to the CountDrop jar file
 				File res = new File(CountDrops.class.getResource("").getPath());				
 				String jar = res.getAbsolutePath()+File.separator+"CountDrops.jar";				 			
@@ -1120,7 +1127,8 @@ public class CountDrops implements ActionListener, ViewWellListener {
 					path = path.replace("\\", "/");
 					jar = jar.replace("\\","/");
 					
-					//write local script to run load estimation !!					
+					//write local script to run load estimation !!
+					System.out.print("Create local R script to run load estimation... ");
 					PrintWriter writer = new PrintWriter(experiment.getPath()+"src_load_estimate.R", Charset.defaultCharset().toString());					
 					writer.println("rm(list=ls())");					
 					writer.println("setwd(\""+path+"\")"); 
@@ -1130,6 +1138,7 @@ public class CountDrops implements ActionListener, ViewWellListener {
 					writer.println("load <- estimateLoad(cfu,max.cfu.per.drop=30)");
 					writer.println("write.table(load,file=\""+loadfile+"\",sep=\";\")");
 					writer.close();
+					System.out.println("done!");
 					
 					//run estimate										
 					try {
@@ -1139,6 +1148,7 @@ public class CountDrops implements ActionListener, ViewWellListener {
 						Process p = pb.start();
 						//waits for the end of process. What if process got stuck? Display progress bar with a cancel button??
 						p.waitFor();
+						System.out.println("Loads have been saved in "+loadfile);
 					} catch(Exception ex) {
 						JOptionPane.showMessageDialog(CountDrops.getGui(),"CountDrops encountered an error while starting R! You can try estimating load by running the script src_load_estimate.R", "Estimating load from counts", JOptionPane.WARNING_MESSAGE);
 					}
@@ -1162,12 +1172,23 @@ public class CountDrops implements ActionListener, ViewWellListener {
 					writer.println("load <- read.table(file=\""+loadfile+"\",header=T,sep=\";\")");
 					writer.println("hist(load$TOTAL)");
 					writer.close();
-
+					System.out.println("The script src_load_estimate.R has been saved.");
+					
+					JOptionPane.showMessageDialog(gui,
+							"Raw counts have been exported in "+countfile+"\n"+
+							"Load estimates have been saved in "+loadfile,
+							"Export results",
+							 JOptionPane.INFORMATION_MESSAGE);
+					
 				} catch(Exception ex) {					
 					System.out.println("Problem while trying to start R code to estimate load");
 					System.out.println(ex);
+					JOptionPane.showMessageDialog(gui,
+							"Raw counts have been exported in "+countfile+"\nbut loads could not be estimated!\n",
+							"Export results",
+							 JOptionPane.WARNING_MESSAGE);
+
 				}
-			}
 			
 		}
 		

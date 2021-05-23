@@ -277,7 +277,7 @@ public class ImageWell {
 			if (action == "DELETE") {
 				deleteSelectedCFU();				
 			}
-			if (action == "SPLIT") {
+			if (action == "SPLIT") {				
 				splitCFU();
 			}
 
