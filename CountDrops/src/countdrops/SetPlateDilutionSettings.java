@@ -73,21 +73,22 @@ public class SetPlateDilutionSettings extends JPanel implements ActionListener {
 
 
 		//JTable for dilution				
-		dilutionTableModel = new DilutionTableModel(settings);
-		dilutionTable = new JTable(dilutionTableModel);		
-		dilutionTable.setDefaultRenderer(Object.class, new DilutionTableCellRenderer());		
-		dilutionTable.setDefaultEditor(double.class, new DilutionTableCellEditor());
+		dilutionTableModel = new DilutionTableModel(settings);		
+		dilutionTable = new JTable(dilutionTableModel);
+		dilutionTable.getColumnModel().setColumnSelectionAllowed(false);
+		dilutionTable.setRowSelectionAllowed(false);
 		dilutionTable.setCellSelectionEnabled(true);
 		dilutionTable.getTableHeader().setReorderingAllowed(false);
 		
+		dilutionTable.setDefaultRenderer(Object.class, new DilutionTableCellRenderer());		
+		
 		dilutionTable.setFillsViewportHeight(true);
-		dilutionTable.setPreferredScrollableViewportSize(new Dimension(13*12*4,9*12*2)); //12 per character, 4 characters per column
-	
-		dilutionTable.getColumnModel().setColumnSelectionAllowed(false);
+		dilutionTable.setPreferredScrollableViewportSize(new Dimension(13*12*4,9*12*2)); //12 per character, 4 characters per column		
 		JScrollPane dilutionTableScrollPanel = new JScrollPane(dilutionTable,				
 				ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
 				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
+		//populates panel
 		this.setLayout(new BoxLayout(this,BoxLayout.PAGE_AXIS));
 		
 		JPanel nrowsPanel = new JPanel();
@@ -114,7 +115,9 @@ public class SetPlateDilutionSettings extends JPanel implements ActionListener {
 		dilLab.setAlignmentX(CENTER_ALIGNMENT);
 		add(dilLab);
 		dilutionTableScrollPanel.setAlignmentX(CENTER_ALIGNMENT);
+		//**
 		add(dilutionTableScrollPanel);
+		//**
 		JLabel dilLab2 = new JLabel("1 means that sample is not diluted, 10 that it is diluted 10 times, etc.");
 		JLabel dilLab3 = new JLabel("You may use scientific notation (1E3 instead of 1000) if you wish.");
 		dilLab2.setAlignmentX(CENTER_ALIGNMENT);

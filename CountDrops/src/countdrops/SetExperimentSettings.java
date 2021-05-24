@@ -1,6 +1,5 @@
 package countdrops;
 
-import java.awt.Color;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -335,15 +334,14 @@ public class SetExperimentSettings extends JDialog implements ActionListener {
 				+ "<p>Samples ID are defined by the same fields than the plate images, to which you can add well, row or column positions.</p><br/>"
 				+ "<p>A typical case is when biological samples are each arranged in a well inside 96 wells plates, and plated at various dilutions with several plating replicates for each dilution. "
 				+ "Fields should then be \"Plate Number\", which is the ID of the plate that contains the biological samples, \"Dilution\" and \"Replicate\", which is the plating replicate "
-				+ "number. Sample ID should be \"Plate Number\" combined to \"WELL\".</p>"
+				+ "number. Sample ID should be \"Plate Number\" combined to \"WELL\".</p><br/>"
 				+ "<p><i>Carefull:</i> Adding or removing fields means that you change the name of plate images, and therefore the folders in which data are stored. "
 				+ "You will therefore not be able to change easily fields (and CFU types) after having started to count CFUs! The definition of sample ID can conversely be changed at any time.</p>"				
 				+ "</html>");
 		blablaPanel_left.add(txt);
+		blablaPanel_left.setOpaque(false);
 		blablaPanel.add(blablaPanel_left);
-		blablaPanel.add(Box.createRigidArea(new Dimension(70,0)));
-		
-		blablaPanel_left.setBackground(Color.decode("#DDDDEE"));
+		blablaPanel.add(Box.createRigidArea(new Dimension(70,0)));		
 		
 		JPanel topPanel = new JPanel();		
 		topPanel.setLayout(new GridLayout(0,2));				

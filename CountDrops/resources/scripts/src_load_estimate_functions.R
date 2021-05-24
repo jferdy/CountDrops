@@ -94,26 +94,49 @@ mostInformativeCountOneSample <- function(counts,volume,concentration,max.cfu.pe
 ## Call estimate and most informative on a data.frame with several samples
 
 estimateLoad <- function(d,max.cfu.per.drop=30) {
-    if(! ("sample_ID" %in% colnames(d))) return null
-    if(! ("Volume" %in% colnames(d))) return null
-    if(! ("Dilution" %in% colnames(d))) return null
+    if(! ("sample_ID" %in% colnames(d))) return(NULL)
+    if(! ("Volume" %in% colnames(d))) return(NULL)
+    if(! ("Dilution" %in% colnames(d))) return(NULL)
 
+    l <- colnames(d)=="NA."
+    if(any(l)) colnames(d)[l] <- "na"
     
-    posFields <- 1:(grep("Volume",colnames(d))-1)
-    posCFU <- (grep("Dilution",colnames(d))+1):ncol(d)
+    posFields <- 1:(max(grep("Volume",colnames(d)))-1)
+    posCFU <- (max(grep("Dilution",colnames(d)))+1):ncol(d)
+    
             
     ld <- split(d,d$sample_ID)
 
-    result <- data.frame()
-    for(i in posFields) result[[colnames(d)[i]]] <- sapply(ld,function(dtmp) {
+    result <- data.frame(matrix(NA,ncol=length(posFields),nrow=length(ld)))
+    colnames(result) <- colnames(d)[posFields]
+    rownames(result) <- names(ld)
+    
+    for(i in posFields) result[,i] <- sapply(ld,function(dtmp) {
         z <- dtmp[,i]
         ## field must have only one value for each sample !
         ## NA is returned otherwise
-        if(length(unique(z))>1) return NA
-        return z[1]
+        if(length(unique(z))>1) return(NA)
+        return(z[1])
     })
     ## columns with only NA are removed
     result <- result[,apply(result,2,function(x) any(!is.na(x)))]
-    
+
+    res <- NULL
+    res <- t(sapply(ld,function(dtmp) {
+       estimateLoadOneSample(dtmp[,posCFU],dtmp$Volume,1/dtmp$Dilution,max.cfu.per.drop) 
+   }))
+    res <- data.frame(res)
+    colnames(res) <- c(paste(colnames(d)[sort(rep(posCFU,2))],c("","_se"),sep=""),
+                       "TOTAL","TOTAL_se")        
+    result <- cbind(result,res)
+
+    res <- NULL
+    res <- t(sapply(ld,function(dtmp) {
+        mostInformativeCountOneSample(dtmp[,posCFU],dtmp$Volume,1/dtmp$Dilution,max.cfu.per.drop) 
+    }))
+    colnames(res) <- c(paste("BEST_",colnames(d)[sort(rep(posCFU,3))],c("","_Volume","_Dilution"),sep=""),
+                       "BEST_TOTAL","BEST_TOTAL_Volume","BEST_TOTAL_Dilution")        
+    result <- cbind(result,res)
+        
     return(result)
 }

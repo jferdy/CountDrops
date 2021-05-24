@@ -24,10 +24,12 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -132,13 +134,13 @@ public class CountDrops implements ActionListener, ViewWellListener {
 	//*********
 	public static void main(String[] args) {
 		try {
+			System.out.println(UIManager.getSystemLookAndFeelClassName());
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
             ex.printStackTrace();
         }
-		
+				
 		instance = new CountDrops();		
-
 		
 		gui = new JFrame();
 		gui.setTitle("CountDrops");
@@ -185,6 +187,7 @@ public class CountDrops implements ActionListener, ViewWellListener {
 		plateNamePattern = new JTextField(10);
 		plateNamePattern.setActionCommand("SEARCHPATTERN");
 		plateNamePattern.addActionListener(instance);
+		plateNamePattern.setToolTipText("Search image or plate by name");
 		
 		p_left_bottom.add(new JLabel(CountDrops.getIcon("edit-find.png")));
 		p_left_bottom.add(Box.createRigidArea(new Dimension(5,0)));
@@ -319,6 +322,7 @@ public class CountDrops implements ActionListener, ViewWellListener {
 		//reads last opened project		
 		readIni();
 	}
+	
 	static void readIni() {
 		try {
 			String  home = System.getProperty("user.home");	
@@ -513,8 +517,9 @@ public class CountDrops implements ActionListener, ViewWellListener {
 		ImageIcon ico = null;
 		try{
 			ClassLoader classLoader = CountDrops.class.getClassLoader();
-			URL url = classLoader.getResource("images/"+fileName); 
-			//System.out.println(url.toString());
+			URL url = classLoader.getResource("images/"+fileName);			
+//			System.out.println(url.getPath());
+//			System.out.println(url.toString());
 			ico = new ImageIcon(url);			
 		} catch(Exception ex) {
 			System.out.println(ex);
@@ -681,7 +686,6 @@ public class CountDrops implements ActionListener, ViewWellListener {
 		return x;
 	}
 
-	
 	// action listener
 	public void actionPerformed(ActionEvent e) {
 		String action = e.getActionCommand();
@@ -1111,59 +1115,73 @@ public class CountDrops implements ActionListener, ViewWellListener {
 				System.out.print("\n");
 								
 				String path = experiment.getPath();			
-				String countfile = experiment.exportCounts();
-				String loadfile = countfile.replace("COUNTS","LOAD");
+				String countfile = experiment.exportCounts();				
 				System.out.println("Counts have been written in "+countfile);
 				
-				//path to the CountDrop jar file
-				File res = new File(CountDrops.class.getResource("").getPath());				
-				String jar = res.getAbsolutePath()+File.separator+"CountDrops.jar";				 			
+				String loadfile = countfile.replace("COUNTS","LOAD");
 				
+								
+				String msg = "";
+				//copy R routines in data directory
+				try (InputStream is = this.getClass().getClassLoader().getResourceAsStream("scripts/src_load_estimate_functions.R")) {
+				    Files.copy(is, Paths.get(experiment.getPath()+"/src_load_estimate_functions.R"));
+				} catch (IOException ex) {
+				    // An error occurred copying the resource
+					System.out.println("\nCould not copy R routines in data directory!");
+					msg += "\nCould not copy R routines in data directory!";
+					ex.printStackTrace();
+				}
+								
+				//write local script to run load estimation
 				try {
-					//ensure that path is not written as an URL
-					jar = URLDecoder.decode(jar,Charset.defaultCharset().toString());
-					//new File(jar).toURI().toString();
-					//Windoze file separator must be replaced by /
-					path = path.replace("\\", "/");
-					jar = jar.replace("\\","/");
-					
-					//write local script to run load estimation !!
 					System.out.print("Create local R script to run load estimation... ");
 					PrintWriter writer = new PrintWriter(experiment.getPath()+"src_load_estimate.R", Charset.defaultCharset().toString());					
 					writer.println("rm(list=ls())");					
 					writer.println("setwd(\""+path+"\")"); 
-					writer.println("unzip(\""+jar+"\",file=\"src_load_estimate_functions.R\",exdir=\".\")");
 					writer.println("source(\"src_load_estimate_functions.R\")");
 					writer.println("cfu <- read.table(\""+countfile+"\",header=T,sep=\";\")");										
 					writer.println("load <- estimateLoad(cfu,max.cfu.per.drop=30)");
 					writer.println("write.table(load,file=\""+loadfile+"\",sep=\";\")");
 					writer.close();
 					System.out.println("done!");
+				} catch(Exception ex) {
+					System.out.println("Could not write R routine is data directory!");
+					msg+="Could not write R routine is data directory!";
+					ex.printStackTrace();
+				}
 					
-					//run estimate										
-					try {
+				//run estimate				
+				boolean loadfile_exists = false;
+				try {
 						//TODO does not seem to work on Macs!!
 						ProcessBuilder pb = new ProcessBuilder(pathToR, "CMD","BATCH","--vanilla","src_load_estimate.R");						
 						pb.directory(new File(experiment.getPath()));					
 						Process p = pb.start();
 						//waits for the end of process. What if process got stuck? Display progress bar with a cancel button??
 						p.waitFor();
-						System.out.println("Loads have been saved in "+loadfile);
-					} catch(Exception ex) {
-						JOptionPane.showMessageDialog(CountDrops.getGui(),"CountDrops encountered an error while starting R! You can try estimating load by running the script src_load_estimate.R", "Estimating load from counts", JOptionPane.WARNING_MESSAGE);
-					}
+						File tempFile = new File(experiment.getPath()+loadfile);
+						loadfile_exists = tempFile.exists();
+						if(loadfile_exists) System.out.println("Loads have been saved in "+loadfile);
+				} catch(Exception ex) {
+					System.out.println("CountDrops probably encountered an error while trying to run R routines");
+					msg += "CountDrops probably encountered an error while trying to run R routines";
+				}
+
+				if(!loadfile_exists) {
+					msg = "CountDrops has failed to export load estimates!"+msg;
+					JOptionPane.showMessageDialog(CountDrops.getGui(),msg , "Estimating load from counts", JOptionPane.WARNING_MESSAGE);	
+				}	
 					
-					
-					//write a new version of script file, with code to estimate load commented, and new code added to read load file and plot
-					//the distribution of total load
-					writer = new PrintWriter(experiment.getPath()+"src_load_estimate.R", Charset.defaultCharset().toString());					
+				//write a new version of script file, with code to estimate load commented, and new code added to read load file and plot
+				//the distribution of total load
+				try {
+					PrintWriter writer = new PrintWriter(experiment.getPath()+"src_load_estimate.R", Charset.defaultCharset().toString());															
 					writer.println("rm(list=ls())");
 					writer.println("setwd(\""+path+"\")");
 					
 					writer.println();
 					writer.println("# Load estimation");
 					writer.println("# cfu <- read.table(\""+countfile+"\",header=T,sep=\";\")");										
-					writer.println("# unzip(\""+jar+"\",file=\"src_load_estimate_functions.R\",exdir=\".\")");
 					writer.println("# source(\"src_load_estimate_functions.R\")");
 					writer.println("# load <- estimateLoad(cfu,max.cfu.per.drop=30)");
 					writer.println("# write.table(load,file=\""+loadfile+"\",sep=\";\")");
@@ -1172,13 +1190,14 @@ public class CountDrops implements ActionListener, ViewWellListener {
 					writer.println("load <- read.table(file=\""+loadfile+"\",header=T,sep=\";\")");
 					writer.println("hist(load$TOTAL)");
 					writer.close();
+					
 					System.out.println("The script src_load_estimate.R has been saved.");
 					
-					JOptionPane.showMessageDialog(gui,
-							"Raw counts have been exported in "+countfile+"\n"+
-							"Load estimates have been saved in "+loadfile,
-							"Export results",
-							 JOptionPane.INFORMATION_MESSAGE);
+					msg = "Raw counts have been exported in "+countfile+"\n";
+					if(loadfile_exists) {
+						msg += "Load estimates have been saved in "+loadfile;
+					}
+					JOptionPane.showMessageDialog(gui,msg,"Export results",JOptionPane.INFORMATION_MESSAGE);
 					
 				} catch(Exception ex) {					
 					System.out.println("Problem while trying to start R code to estimate load");

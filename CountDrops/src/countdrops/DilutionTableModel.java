@@ -66,7 +66,7 @@ public class DilutionTableModel extends AbstractTableModel {
 	@Override
 	public Class getColumnClass(int column) {
 		if(column==0) return String.class;
-		return double.class;
+		return Double.class;
 	}
 
 	@Override
