@@ -584,16 +584,15 @@ public class ViewWell extends JFrame implements ActionListener, ImageWellListene
 		
 		this.setContentPane(main_panel);
 		pack();
-		
-		
-		//position and size					
-		if(evt.getWindowSize()!=null) setSize(evt.getWindowSize());
-		setLocation(evt.getLocation());												
-		
+					
 		img.drawCFU();
 		centerImageView(); 		
 								
 		img.getWell().lock(); // writes a lock file in the well folder
+		
+		//position and size					
+		if(evt.getWindowSize()!=null) setSize(evt.getWindowSize());
+		setLocation(evt.getLocation());												
 		
 		setVisible(true);		
 	}

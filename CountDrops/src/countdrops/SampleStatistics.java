@@ -2,6 +2,8 @@ package countdrops;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 
 public class SampleStatistics {
@@ -14,11 +16,12 @@ public class SampleStatistics {
 	int nbCFUtype = 0;
 	private String[] CFUtype   = null;
 	
+	private ArrayList<String>  image     = null;
 	private ArrayList<String>  plateName = null;
-	private ArrayList<String>  wellName = null;
+	private ArrayList<String>  wellName  = null;
 	private ArrayList<Double>  dilution  = null;
 	private ArrayList<Double>  volume    = null;
-	private ArrayList<Integer>   counts    = null; //count is -1 if CFU type is not countable !
+	private ArrayList<Integer> counts    = null; //count is -1 if CFU type is not countable !
 	private ArrayList<Boolean> ignore    = null;
 	
 	private ArrayList<Double>  uniqueDilutionValues  = null;
@@ -32,7 +35,7 @@ public class SampleStatistics {
 		CFUtype = new String[nbCFUtype];
 		for(int i=0;i<nbCFUtype;i++) CFUtype[i] = s.getCFUType(i);		
 	
-		
+		image = new ArrayList<String>();
 		plateName = new ArrayList<String>();
 		wellName = new ArrayList<String>();
 		dilution = new ArrayList<Double>();
@@ -51,7 +54,7 @@ public class SampleStatistics {
 		CFUtype = new String[nbCFUtype];
 		for(int i=0;i<nbCFUtype;i++) CFUtype[i] = s.getCFUType(i);		
 	
-		
+		image = new ArrayList<String>();
 		plateName = new ArrayList<String>();
 		wellName = new ArrayList<String>();
 		dilution = new ArrayList<Double>();
@@ -61,6 +64,7 @@ public class SampleStatistics {
 		uniqueDilutionValues = new ArrayList<Double>();
 		
 		for(int i=0;i<s.getNBcounts();i++) {
+			image.add(s.getImage(i));
 			plateName.add(s.getPlateName(i));
 			wellName.add(s.getWellName(i));
 			dilution.add(s.getDilution(i));
@@ -73,6 +77,7 @@ public class SampleStatistics {
 		for(int i=0;i<s.getNbUniqueDilutionValues();i++) {
 			uniqueDilutionValues.add(s.getUniqueDilutionValue(i));
 		}
+		
 		posOfCurrentWell = s.getPosOfCurrentWell();
 	}
 
@@ -114,6 +119,7 @@ public class SampleStatistics {
 	public boolean addCounts(Well w) {
 		if(!id.equals(sampleID.getSampleID(w))) return false;
 		
+		image.add(w.getImage());
 		plateName.add(w.getPlate());
 		wellName.add(w.getName());
 		dilution.add(w.getDilution());
@@ -126,15 +132,17 @@ public class SampleStatistics {
 	
 	public void updateCounts(Well w) {
 		//look for well
+		String img = w.getImage();
 		String pln = w.getPlate();
 		String wln = w.getName();
 		
 		int pos = -1;		
 		for(int i=0;i<getNBcounts() && pos<0;i++) {
-			if(pln.equals(plateName.get(i)) && wln.equals(wellName.get(i))) {
+			if(img.equals(image.get(i)) && pln.equals(plateName.get(i)) && wln.equals(wellName.get(i))) {
 				pos = i;
 			}			
 		}				
+		
 		if(pos<0 || pos>=getNBcounts()) return;		
 		for(int i=0;i<nbCFUtype+1;i++) {
 			if(w.isNonCountable(i)) {
@@ -143,6 +151,7 @@ public class SampleStatistics {
 				counts.set(pos*(nbCFUtype+1)+i,w.getNbCFU(i));
 			}
 		}
+		
 	}
 	
 	public void updateCounts(int pos,int[] x) {
@@ -167,6 +176,14 @@ public class SampleStatistics {
 				uniqueDilutionValues.add(x);
 			}
 		}
+		Collections.sort(uniqueDilutionValues);
+	}
+	
+	public String getImage(int i) {
+		if(image==null) return "?";
+		if(i<0 || i>=image.size()) return "?";
+		if(i<0 || i>getNBcounts()) return "?";
+		return(image.get(i));
 	}
 	
 	public String getPlateName(int i) {

@@ -3,11 +3,7 @@ package countdrops;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
-import java.awt.MenuItem;
 import java.awt.Point;
-import java.awt.PopupMenu;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -67,7 +63,7 @@ public class ImageWell {
 	
 	//popup menu to fire when a CFU is right clicked
 	//maybe all action that involve shortcuts with [CTRL] should be added here??
-	private PopupMenu     cfuPopup;
+	//private PopupMenu     cfuPopup;
 	
 	//doWand options to create new CFUs
 	private Boolean createCFUwithMagicWand = false;
@@ -134,12 +130,16 @@ public class ImageWell {
 			
 			if(index>-1) {
 				//a CFU has been clicked on
-				//Right click triggers popup menu
-				if(SwingUtilities.isRightMouseButton(evt)) {	
-					deselectAllCFU();
-					selectCFU(index);	    			
-					cfuPopup.show(getImageCanvas(), evt.getX(),evt.getY());							
+				//Right click now triggers split, instead of popup menu
+				if(SwingUtilities.isRightMouseButton(evt)) {
+					CFU cfu = well.getCFU(index);
+					if(!cfu.isSaved()) return; //cfu cannot be edited if saving is still in process
+					splitCFU(cfu); 
 					return;
+//					deselectAllCFU();
+//					selectCFU(index);	    			
+//					cfuPopup.show(getImageCanvas(), evt.getX(),evt.getY());							
+//					return;
 				}
 
 				//Left click does other things
@@ -269,21 +269,21 @@ public class ImageWell {
 	};
 	
 	//action listener hooked on popup menu
-	private ActionListener cfuActionListener = new ActionListener() {  
-		public void actionPerformed(ActionEvent e) {
-			if(selectedCFU.size()<=0) return; //actions here operate only on selected CFU
-			
-			String action = e.getActionCommand();
-			if (action == "DELETE") {
-				deleteSelectedCFU();				
-			}
-			if (action == "SPLIT") {				
-				splitCFU();
-			}
-
-		};
-	};
-	
+//	private ActionListener cfuActionListener = new ActionListener() {  
+//		public void actionPerformed(ActionEvent e) {
+//			if(selectedCFU.size()<=0) return; //actions here operate only on selected CFU
+//			
+//			String action = e.getActionCommand();
+//			if (action == "DELETE") {
+//				deleteSelectedCFU();				
+//			}
+//			if (action == "SPLIT") {				
+//				splitCFU();
+//			}
+//
+//		};
+//	};
+//	
 	public ImageWell(ImagePlus fullImage,Plate xpl,Well xw) {				
 		plate = xpl;
 		well = xw;
@@ -302,18 +302,18 @@ public class ImageWell {
 		splitCursor = Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
 		
 		//create and populate popup menu	    
-	    cfuPopup=new PopupMenu();	        	    
-	    MenuItem cfuPopupItem_del =new MenuItem("Delete CFU");
-	    cfuPopupItem_del.setActionCommand("DELETE");
-	    cfuPopupItem_del.addActionListener(cfuActionListener);
-	    cfuPopup.add(cfuPopupItem_del); 
-
-	    MenuItem cfuPopupItem_split =new MenuItem("Split CFU");
-	    cfuPopupItem_split.setActionCommand("SPLIT");
-	    cfuPopupItem_split.addActionListener(cfuActionListener);
-	    cfuPopup.add(cfuPopupItem_split);
-
-	    canvas.add(cfuPopup);
+//	    cfuPopup=new PopupMenu();	        	    
+//	    MenuItem cfuPopupItem_del =new MenuItem("Delete CFU");
+//	    cfuPopupItem_del.setActionCommand("DELETE");
+//	    cfuPopupItem_del.addActionListener(cfuActionListener);
+//	    cfuPopup.add(cfuPopupItem_del); 
+//
+//	    MenuItem cfuPopupItem_split =new MenuItem("Split CFU");
+//	    cfuPopupItem_split.setActionCommand("SPLIT");
+//	    cfuPopupItem_split.addActionListener(cfuActionListener);
+//	    cfuPopup.add(cfuPopupItem_split);
+//
+//	    canvas.add(cfuPopup);
 	    
 		//remove default listeners
 		for(MouseListener o1 : canvas.getMouseListeners()) canvas.removeMouseListener(o1);		

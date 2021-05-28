@@ -17,27 +17,19 @@ public class HelpViewWell extends JDialog {
 		textShortCuts.setBackground(this.getBackground());
 		//System.out.println(this.getFont());
 		textShortCuts.setText("<html>" +
-					"<h2 style=\"font-family:Dialog\">Shortcuts</h2>" +
+					"<h1 style=\"font-family:Dialog\">Shortcuts</h1>" +
 				    "<table style=\"font-family:Dialog\">"+
-				    "<tr>"+
-				    "<td>"+
-					"<b>[SPACE]</b> : display/hide all CFUs<br>"+
-					"<b>[CTRL]+a</b> : select all CFUs<br>" +
-					"<b>[ESC]</b> : unselect all CFUs<br>" +
-				    "</td>"+
-					"<td>"+
-					"<b>[SUPPR]</b> : delete selected CFUs<br>" +
-					"<b>[CTRL]+[ALT]+click</b> : split CFU<br><br>"+
-					"<b>[CRTL][SHIFT]+Key</b> : change type of selected CFUs<br>" +				
-					"<b>[CTRL]+[SHIFT]+click</b> : change CFU to current type<br>"+						
-				    "</td>"+
-					"<td>"+
-					"<b>[ALT]+UP/DOWN</b> : zoom in/out<br>"+				
-					"<b>[ALT]+RIGHT/LEFT</b> : change image slice<br><br>"+
-					"<b>[CRTL]+RIGHT/LEFT/UP/DOWN</b> : move to a neighbor well<br>" +
-					"<b>[CTRL]+w</b> : close window"+
-					"</td>"+
-					"</tr>"+
+				    "<tr><td><b>[SPACE]</b></td><td>display/hide all CFUs</td></tr>"+
+					"<tr><td><b>[CTRL]+a</b></td><td> select all CFUs</td></tr>" +
+					"<tr><td><b>[ESC]</b></td><td> unselect all CFUs</td></tr>" +
+					"<tr><td><b>[SUPPR]</b></td><td>delete selected CFUs</td></tr>" +
+					"<tr><td><b>[CTRL]+[ALT]+click</b> or <b>right click</b></td><td>split CFU</td></tr>"+
+					"<tr><td><b>[CRTL][SHIFT]+Key</b></td><td> change type of selected CFUs</td></tr>" +				
+					"<tr><td><b>[CTRL]+[SHIFT]+click</b></td><td>change CFU to current type</td></tr>"+						
+					"<tr><td><b>[ALT]+UP/DOWN</b></td><td>zoom in/out</td></tr>"+				
+					"<tr><td><b>[ALT]+RIGHT/LEFT</b></td><td>change image slice</td></tr>"+
+					"<tr><td><b>[CRTL]+RIGHT/LEFT/UP/DOWN</b></td><td>move to a neighbor well</td></tr>" +
+					"<tr><td><b>[CTRL]+w</b></td><td>close window</td></tr>"+
 				    "</table></html>");
 		textShortCuts.setEditable(false);
 		textShortCuts.setFocusable(false);

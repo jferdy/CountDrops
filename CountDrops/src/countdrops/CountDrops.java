@@ -149,6 +149,9 @@ public class CountDrops implements ActionListener, ViewWellListener {
 		gui.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		gui.setModalExclusionType(Dialog.ModalExclusionType.NO_EXCLUDE);
 
+		//reads options		
+		readIni();
+
 		Panel p = new Panel();
 		p.setLayout(new BoxLayout(p, BoxLayout.LINE_AXIS));
 
@@ -263,7 +266,8 @@ public class CountDrops implements ActionListener, ViewWellListener {
 		buttonExportResult.setEnabled(false);
 
 		//load icons for option button 
-		ImageIcon icon_options = CountDrops.getIcon("applications-system.png");		
+		//ImageIcon icon_options = CountDrops.getIcon("applications-system.png");		
+		ImageIcon icon_options = CountDrops.getIcon("Rlogo.png");
 		buttonOptions = new JButton(icon_options);		
 		buttonOptions.addActionListener(instance);
 		buttonOptions.setActionCommand("SETOPTIONS");
@@ -319,8 +323,6 @@ public class CountDrops implements ActionListener, ViewWellListener {
 		//TODO this line may be removed in case updates in IJ correct the bug! 
 		//new ImageJ( null, ImageJ.NO_SHOW );
 		
-		//reads last opened project		
-		readIni();
 	}
 	
 	static void readIni() {
@@ -341,7 +343,7 @@ public class CountDrops implements ActionListener, ViewWellListener {
             		System.out.println("Path to R executable: "+pathToR);       		
             	} else {
             		File f= new File(line);
-            		if(f.exists()) lastFile= f;
+            		if(f.exists()) lastFile=f;
             	}
             }   
             // Always close files.
@@ -367,6 +369,11 @@ public class CountDrops implements ActionListener, ViewWellListener {
 				PlateSettings s = experiment.getSettings();
 				bufferedWriter.write(s.getPath()+s.getFileName());
 				bufferedWriter.newLine();
+			} else {
+				if(lastFile!=null) {
+					bufferedWriter.write(lastFile.getAbsolutePath());
+					bufferedWriter.newLine();					
+				}
 			}
 
 			// Always close files.
@@ -1212,13 +1219,14 @@ public class CountDrops implements ActionListener, ViewWellListener {
 		}
 		
 		if(action=="SETOPTIONS") {
-			//let the user change options
-			Object res = JOptionPane.showInputDialog(gui, "Path to R","Set options", JOptionPane.QUESTION_MESSAGE,null,null, pathToR);			
+			//let the user change options (for the moment, the only option in path to R)
+			Object res = JOptionPane.showInputDialog(gui, "Set path to R executable\nThis is required so that load can be estimated from raw counts upon result exporting.\nUnder Linux and alike, this should simply be \"R\".","Path to R", JOptionPane.QUESTION_MESSAGE,null,null, pathToR);			
 			if(res != null) {
-				pathToR = res.toString();
-			}
-			//save new option values in CountDrop.ini
-			writeIni();
+				pathToR = res.toString();				
+				//save new option values in CountDrop.ini
+				writeIni();
+			}			
+			
 		}
 	}
 

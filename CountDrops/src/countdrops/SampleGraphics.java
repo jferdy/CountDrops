@@ -9,6 +9,7 @@ import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
 import java.util.Map;
 
 import javax.swing.BorderFactory;
@@ -55,7 +56,6 @@ public class SampleGraphics extends JPanel {
             updateMinMaxX();
             updateMinMaxY();
                         
-            //setMinimumSize(new Dimension(100,100));
             setBackground(new java.awt.Color(255, 255, 255));            
             setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
                                                 
@@ -65,7 +65,6 @@ public class SampleGraphics extends JPanel {
             	    ToolTipManager.sharedInstance().setInitialDelay(0);
             	  }
             	  public void mouseExited(MouseEvent me) {
-            		  //System.out.println("out");
             		  ToolTipManager.sharedInstance().setInitialDelay(defaulInitialDelay);
             	  }
             	});
@@ -168,23 +167,20 @@ public class SampleGraphics extends JPanel {
             g.setColor(Color.DARK_GRAY);
             g.drawRect(4*htext,pointRadius, grWidth,grHeight);  
             
-            /*
              //TODO rotating text does not work!!
             String str = "counts";
             if(logScaleY) {
             	str = str + " (log scale)";            
             }
-            int w  = metrics.stringWidth(str);                       
-            AffineTransform tr = g.getTransform();
-            g.rotate(-Math.PI/2);
 
-            //g.drawString(str, htext, 2*htext+grHeight/2-w/2);
-            g.drawString(str, getHeight()/2,getWidth()/2);
+            AffineTransform tr = g.getTransform();
+            g.rotate(-Math.PI/2.0);
+            g.setColor(Color.BLACK);
+            g.drawString(str,-grHeight/2-metrics.stringWidth(str)/2,2*htext);
             g.setTransform(tr);
-            */
             
             //x axis label
-            String str = "dilution";
+            str = "dilution";
             if(logScaleX) {
             	str = str + " (log scale)";            
             }
@@ -195,7 +191,8 @@ public class SampleGraphics extends JPanel {
             if(CFUtype<0) return;
             updateMinMaxY();
 
-            //draws ticks and tick labels on x scale            
+            //draws ticks and tick labels on x scale
+            int posLabY = -100;
             for(int i = 0; i < statistics.getNbUniqueDilutionValues(); i++) {
             	double z = statistics.getUniqueDilutionValue(i);
             	if(logScaleX) {
@@ -203,11 +200,21 @@ public class SampleGraphics extends JPanel {
             	}            	
             	int x = 4*htext + (int) (grWidth*(z-minX)*scaleX + 0.5);
             	int y = pointRadius + grHeight;
-            	str = ""+statistics.getUniqueDilutionValue(i);
+            	            	
             	g.setColor(Color.BLACK);
             	g.drawLine(x,y,x,y+5);            	
-            	g.drawString(str,x-metrics.stringWidth(str)/2,y+htext);
-            	//System.out.print(x+" "+y+" "+str);
+            	
+            	//string is drawn only if it does not overlap with previous one
+            	//careful: this assumes that unique dilution values are sorted!
+            	if(statistics.getUniqueDilutionValue(i) == (long) statistics.getUniqueDilutionValue(i))
+                    str= String.format("%d",(long) statistics.getUniqueDilutionValue(i));
+                else
+                    str = String.format("%s",statistics.getUniqueDilutionValue(i));
+            	int l = metrics.stringWidth(str)/2;
+            	if((x-l)>posLabY) {
+            		g.drawString(str,x-l,y+htext);
+            		posLabY=x+l;
+            	}
             }
             
           //draws ticks and tick labels on y scale            
@@ -330,7 +337,7 @@ public class SampleGraphics extends JPanel {
             }
             
             //on log-log graphs, a line of slope -1 going through average values is drawn
-            if(logScaleX && logScaleY) {
+            if(logScaleX && logScaleY && nbAvg>0 && avgY>0) {
             	int x1,x2,y1,y2;
             	if(avgY - (minX-avgX)>maxY) {
             		x1 = 4*htext + (int) (grWidth*((avgY-maxY+avgX)-minX)*scaleX + 0.5);

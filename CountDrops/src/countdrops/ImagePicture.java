@@ -321,9 +321,8 @@ public class ImagePicture implements ViewWellListener {
 	
 	public void openViewWell(Well w,ViewWellEvent evt) {		
 		if(w==null) return;
-
+		
 		if(w.isLocked()) {
-
 			Object[] options = { "NO", "YES" };
 			int i = JOptionPane.showOptionDialog(null, 
 					"Well "+w.getName()+" has been locked, probably because it is currently being edited! Do you want to unlock and proceed?", 
@@ -334,6 +333,7 @@ public class ImagePicture implements ViewWellListener {
 				w.unlock();
 			}		    		    		    
 		}
+		
 		if(!w.isLocked()) {
 			SampleStatistics stat = gui.getStatistics(w); //sampleStatistics will be copied when the graphic is created			
 			
@@ -342,31 +342,32 @@ public class ImagePicture implements ViewWellListener {
 			if(evt==null ) { //create ViewWellEvent
 			  Point loc = null; 
 			  GraphicsDevice device;
-			  if(openedViewWell.size()>0) { 
+			  if(openedViewWell.size()>0) {
+				  //location will be set relative to last opened ViewWell
 				  device = openedViewWell.get(openedViewWell.size()-1).getGraphicsConfiguration().getDevice();
 				  loc = openedViewWell.get(openedViewWell.size()-1).getLocation(); 
-			  } else { 
+			  } else {
+				  //location will be set relative to plate image window
 				  device = this.getImageWindow().getGraphicsConfiguration().getDevice();
 				  loc = this.getImageWindow().getLocation(); 				  
-			  } 
-			  
+			  } 			  
 			  evt = new ViewWellEvent(this,loc);
 			  evt.setScreen(device);
-			}			  
+			}	
+			
 			evt.setXreversed(selectedPlate.isXreversed());
 			evt.setYreversed(selectedPlate.isYreversed());
-				
-			
+							
 			ViewWell  vw = new ViewWell(iw,evt,stat);
 			
 			vw.addListener(this); //ImagePicture listens to ViewWell
 			vw.addListener(gui);  //main gui also listens to adjust ExperimentTree to changes in CFU number
-						
+			
 			openedWell.add(w);
 			openedViewWell.add(vw);
-
+			
 			overlay.clear();
-			drawPlate(selectedPlate);
+			drawPlate(selectedPlate);			
 		}
 	}
 
@@ -396,7 +397,7 @@ public class ImagePicture implements ViewWellListener {
 		//System.out.print(loc.getX()+" "+loc.getY()+" -> ");
 				
 		if(openedWell.contains(w)) {
-			//opens a new ViewWell instance only if the clicked well belongs to selectedPlate !
+			//opens a new ViewWell instance only if the clicked well belongs to selectedPlate
 			int row = w.getRowInPlate();
 			int col = w.getColInPlate();			
 			if(evt.getAction().equals("MOVERIGHT")) {
@@ -421,14 +422,12 @@ public class ImagePicture implements ViewWellListener {
 					loc.setLocation(loc.getX()+100,loc.getY()+50);
 				}
 				//open a new ViewWell instance
-				openViewWell(w2,evt);
-				
+				openViewWell(w2,evt);				
 			} else {
 				GenericDialog gd2 = new GenericDialog("Well inspection");
 				gd2.addMessage("w2 is null!");
 				gd2.showDialog();
 			}
-
 		}
 	}
 
